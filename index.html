@@ -221,24 +221,18 @@
 <body>
   <header>
     <h1>Attribute Checker</h1>
-    <p>Checks selected model objects against project-specific attribute rules.</p>
+    <p>Checks visible model objects against project-specific attribute rules.</p>
   </header>
 
   <main>
     <div class="panel">
-      <div class="row">
-        <div>
-          <label for="rulesUrl">Rules JSON URL</label>
-          <input id="rulesUrl" type="text" value="rules.json?v=1" />
-          <div class="hint">
-            Put your exported rule file beside this extension on GitHub Pages, normally as <b>rules.json</b>.
-          </div>
-        </div>
+      <div class="buttons">
+        <button onclick="loadRules()">Update rules</button>
+        <button class="secondary" onclick="inspectSelectedObject()">Inspect selected object</button>
       </div>
 
-      <div class="buttons">
-        <button onclick="loadRules()">Load rules</button>
-        <button class="secondary" onclick="inspectSelectedObject()">Inspect selected object</button>
+      <div class="hint">
+        Rules are loaded automatically from the latest <b>rules.json</b> file published with this extension.
       </div>
 
       <div id="status" class="status" style="margin-top:10px;">Starting extension...</div>
@@ -249,7 +243,7 @@
       <select id="ruleSetSelect"></select>
 
       <div class="buttons">
-        <button onclick="checkSelectedObjects()">Check selected objects</button>
+        <button onclick="checkVisibleObjects()">Check all visible objects</button>
         <button class="secondary" onclick="selectResultGroup('correct')">Select correct</button>
         <button class="secondary" onclick="selectResultGroup('incorrect')">Select incorrect</button>
         <button class="secondary" onclick="selectResultGroup('missing')">Select missing</button>
@@ -307,6 +301,7 @@
     let API = null;
     let rules = null;
     let lastResults = [];
+    const MAX_DISPLAY_ROWS = 1000;
     let lastCheckedGroups = {
       correct: [],
       incorrect: [],
@@ -329,7 +324,7 @@
         }
 
         API = await window.TrimbleConnectWorkspace.connect(window.parent, onWorkspaceEvent, 30000);
-        setStatus("Connected to Trimble Connect. Load rules to begin.");
+        setStatus("Connected to Trimble Connect. Updating rules...");
 
         await loadRules();
       } catch (error) {
@@ -345,7 +340,8 @@
 
     async function loadRules() {
       try {
-        const url = document.getElementById("rulesUrl").value.trim() || "rules.json?v=1";
+        const url = "rules.json?v=" + Date.now();
+        setStatus("Updating rules from GitHub...");
         const response = await fetch(url, { cache: "no-store" });
 
         if (!response.ok) {
@@ -386,52 +382,71 @@
       });
     }
 
-    async function checkSelectedObjects() {
+    async function checkVisibleObjects() {
       try {
         ensureReady();
 
         const ruleSet = getSelectedRuleSet();
-        const selectionGroups = await getSelectionGroups();
+        const visibleGroups = await getVisibleObjectGroups();
 
-        if (selectionGroups.length === 0) {
-          setStatus("No objects selected. Select one or more objects in the 3D viewer first.");
+        if (visibleGroups.length === 0) {
+          setStatus("No visible objects found in the 3D viewer.");
           return;
         }
 
-        setStatus("Checking selected objects...");
+        const totalObjects = visibleGroups.reduce((sum, group) => sum + group.objectRuntimeIds.length, 0);
+        const attributeCount = (ruleSet.attributes || []).length;
+
+        if (!confirm("Check " + totalObjects + " visible object(s) against " + attributeCount + " attribute rule(s)?\n\nThis may take some time on large models.")) {
+          setStatus("Check cancelled.");
+          return;
+        }
+
+        setStatus("Checking " + totalObjects + " visible object(s)...");
 
         lastResults = [];
         lastCheckedGroups = { correct: [], incorrect: [], missing: [] };
 
-        for (const group of selectionGroups) {
-          const objectProperties = await API.viewer.getObjectProperties(group.modelId, group.objectRuntimeIds);
+        let checkedCount = 0;
+        const batchSize = 200;
 
-          for (const object of objectProperties) {
-            const runtimeId = object.id;
-            const flat = flattenProperties(object);
-            const objectAttributeResults = [];
+        for (const group of visibleGroups) {
+          for (let start = 0; start < group.objectRuntimeIds.length; start += batchSize) {
+            const batchIds = group.objectRuntimeIds.slice(start, start + batchSize);
+            const objectProperties = await API.viewer.getObjectProperties(group.modelId, batchIds);
 
-            for (const rule of (ruleSet.attributes || [])) {
-              const result = evaluateRule(rule, flat);
-              objectAttributeResults.push(result);
+            for (const object of objectProperties) {
+              const runtimeId = object.id;
+              const flat = flattenProperties(object);
+              const objectAttributeResults = [];
 
-              lastResults.push({
+              for (const rule of (ruleSet.attributes || [])) {
+                const result = evaluateRule(rule, flat);
+                objectAttributeResults.push(result);
+
+                lastResults.push({
+                  modelId: group.modelId,
+                  objectRuntimeId: runtimeId,
+                  objectLabel: shortObjectLabel(group.modelId, runtimeId),
+                  status: result.status,
+                  attributePath: rule.path || makePath(ruleSet.name, rule.name),
+                  actualValue: result.actualValue,
+                  expected: describeExpected(rule),
+                  message: result.message
+                });
+              }
+
+              const objectStatus = getObjectOverallStatus(objectAttributeResults);
+              lastCheckedGroups[objectStatus].push({
                 modelId: group.modelId,
-                objectRuntimeId: runtimeId,
-                objectLabel: shortObjectLabel(group.modelId, runtimeId),
-                status: result.status,
-                attributePath: rule.path || makePath(ruleSet.name, rule.name),
-                actualValue: result.actualValue,
-                expected: describeExpected(rule),
-                message: result.message
+                objectRuntimeId: runtimeId
               });
+
+              checkedCount++;
             }
 
-            const objectStatus = getObjectOverallStatus(objectAttributeResults);
-            lastCheckedGroups[objectStatus].push({
-              modelId: group.modelId,
-              objectRuntimeId: runtimeId
-            });
+            setStatus("Checking visible objects... " + checkedCount + " / " + totalObjects);
+            await pauseBriefly();
           }
         }
 
@@ -439,7 +454,12 @@
         updateSummary();
         await colorResults();
 
-        setStatus("Check complete. Objects colored: green = correct, red = incorrect, orange = missing.");
+        const hiddenRows = Math.max(0, lastResults.length - MAX_DISPLAY_ROWS);
+        const extraMessage = hiddenRows > 0
+          ? "\nOnly the first " + MAX_DISPLAY_ROWS + " result rows are shown in the table. Export CSV for the full result."
+          : "";
+
+        setStatus("Check complete. Objects colored: green = correct, red = incorrect, orange = missing." + extraMessage);
       } catch (error) {
         console.error(error);
         setStatus("Check failed.\n\n" + errorMessage(error));
@@ -805,6 +825,23 @@
       return checkType;
     }
 
+    async function getVisibleObjectGroups() {
+      const objects = await API.viewer.getObjects(undefined, { visible: true });
+
+      if (!Array.isArray(objects)) return [];
+
+      return objects
+        .map(group => ({
+          modelId: group.modelId,
+          objectRuntimeIds: group.objectRuntimeIds || group.ids || []
+        }))
+        .filter(group => group.modelId && group.objectRuntimeIds.length > 0);
+    }
+
+    function pauseBriefly() {
+      return new Promise(resolve => setTimeout(resolve, 10));
+    }
+
     async function getSelectionGroups() {
       const selection = await API.viewer.getSelection();
 
@@ -851,7 +888,7 @@
       const tbody = document.getElementById("resultRows");
       tbody.innerHTML = "";
 
-      lastResults.forEach(row => {
+      lastResults.slice(0, MAX_DISPLAY_ROWS).forEach(row => {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
