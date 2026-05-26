@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v13</title>
+  <title>Attribute Checker v14</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -65,7 +65,7 @@
 <body>
 <header>
   <h1>Attribute Checker</h1>
-  <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer. Includes ignored common-type filtering.</p>
+  <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer. Includes ignored object filtering.</p>
 </header>
 
 <main>
@@ -86,7 +86,15 @@
         <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
         <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM" />
         <div class="hint">
-          Separate values with commas. These objects are skipped before checking. Default examples: PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM. Add more here if you find more non-physical/container types causing false errors.
+          Separate values with commas. These are skipped if the API returns a readable Common Type value.
+        </div>
+
+        <div style="height:8px;"></div>
+
+        <label for="ignoredPathKeywords">Ignore objects with these property group/path keywords</label>
+        <input id="ignoredPathKeywords" type="text" value="Ifc Project, Ifc Site, Ifc Building, Ifc Building Storey" />
+        <div class="hint">
+          Separate values with commas. This is a fallback for hierarchy/container objects where Trimble shows groups such as Ifc Building Storey, but the API does not return Common Type clearly.
         </div>
       </div>
     </details>
@@ -127,7 +135,7 @@
         <div class="card"><div id="vChecked" class="num info">0</div><div>Objects checked</div></div>
         <div class="card"><div id="vPassed" class="num good">0</div><div>Passed</div></div>
         <div class="card"><div id="vFailed" class="num bad">0</div><div>Failed</div></div>
-        <div class="card"><div id="vIgnored" class="num warn">0</div><div>Ignored by type</div></div>
+        <div class="card"><div id="vIgnored" class="num warn">0</div><div>Ignored by filter</div></div>
         <div class="card"><div id="vNoKnown" class="num warn">0</div><div>Not checked - no matching set</div></div>
       </div>
     </div>
@@ -160,7 +168,7 @@
         <div class="card"><div id="sAllRequired" class="num good">0</div><div>Has all required sets</div></div>
         <div class="card"><div id="sMissingRequired" class="num bad">0</div><div>Missing required sets</div></div>
         <div class="card"><div id="sOnlyRequired" class="num warn">0</div><div>Only required sets</div></div>
-        <div class="card"><div id="sIgnored" class="num warn">0</div><div>Ignored by type</div></div>
+        <div class="card"><div id="sIgnored" class="num warn">0</div><div>Ignored by filter</div></div>
         <div class="card"><div id="sNoKnown" class="num warn">0</div><div>No known set</div></div>
       </div>
     </div>
@@ -305,6 +313,84 @@ function getIgnoredCommonTypes() {
     .filter(Boolean);
 }
 
+function getIgnoredPathKeywords() {
+  const input = document.getElementById("ignoredPathKeywords");
+  if (!input) return [];
+  return input.value
+    .split(",")
+    .map(v => normalizeKeyword(v))
+    .filter(Boolean);
+}
+
+function normalizeKeyword(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/_/g, "")
+    .replace(/-/g, "")
+    .replace(/\./g, "")
+    .toLowerCase();
+}
+
+function getPropertyPathKeywordMatch(flat, raw = null) {
+  const ignoredKeywords = getIgnoredPathKeywords();
+  if (!ignoredKeywords.length) return "";
+
+  const flatKeys = Object.keys(flat || {});
+  for (const key of flatKeys) {
+    const normalizedKey = normalizeKeyword(key);
+    const matched = ignoredKeywords.find(keyword => normalizedKey.includes(keyword));
+    if (matched) return key;
+  }
+
+  const rawNames = [];
+
+  function collectNames(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(collectNames);
+      return;
+    }
+
+    if (typeof node !== "object") return;
+
+    const candidates = [
+      node.name, node.Name,
+      node.key, node.Key,
+      node.displayName, node.DisplayName,
+      node.label, node.Label,
+      node.title, node.Title,
+      node.type, node.Type
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate === undefined || candidate === null) continue;
+
+      if (typeof candidate === "object") {
+        const nested = candidate.value ?? candidate.Value ?? candidate.text ?? candidate.Text ?? candidate.name ?? candidate.Name;
+        if (nested !== undefined && nested !== null && typeof nested !== "object") {
+          rawNames.push(String(nested));
+        }
+      } else {
+        rawNames.push(String(candidate));
+      }
+    }
+
+    Object.keys(node).forEach(key => collectNames(node[key]));
+  }
+
+  collectNames(raw);
+
+  for (const name of rawNames) {
+    const normalizedName = normalizeKeyword(name);
+    const matched = ignoredKeywords.find(keyword => normalizedName.includes(keyword));
+    if (matched) return name;
+  }
+
+  return "";
+}
+
 function normalizeTypeValue(value) {
   return String(value || "")
     .trim()
@@ -436,14 +522,30 @@ function getCommonTypeFromRaw(raw) {
 
 function shouldIgnoreObject(flat, raw = null) {
   const commonType = getCommonType(flat) || getCommonTypeFromRaw(raw);
-  if (!commonType) return { ignore: false, commonType: "" };
-
   const ignored = getIgnoredCommonTypes();
   const normalizedCommonType = normalizeTypeValue(commonType);
 
+  if (commonType && ignored.includes(normalizedCommonType)) {
+    return {
+      ignore: true,
+      commonType,
+      reason: "Common Type"
+    };
+  }
+
+  const keywordMatch = getPropertyPathKeywordMatch(flat, raw);
+  if (keywordMatch) {
+    return {
+      ignore: true,
+      commonType: commonType || "",
+      reason: "Property group/path keyword: " + keywordMatch
+    };
+  }
+
   return {
-    ignore: ignored.includes(normalizedCommonType),
-    commonType
+    ignore: false,
+    commonType: commonType || "",
+    reason: ""
   };
 }
 
@@ -494,7 +596,8 @@ async function runValueScan() {
             valueData.ignoredItems.push({
               modelId: group.modelId,
               objectRuntimeId: objectId,
-              commonType: ignoreCheck.commonType
+              commonType: ignoreCheck.commonType,
+              reason: ignoreCheck.reason
             });
             setProgress((processed / totalObjects) * 100);
             continue;
@@ -534,7 +637,7 @@ async function runValueScan() {
       "Objects checked: " + checked + "\n" +
       "Passed: " + passed + "\n" +
       "Failed: " + failed + "\n" +
-      "Ignored by common type: " + ignored + "\n" +
+      "Ignored by filter: " + ignored + "\n" +
       "Not checked - no matching set: " + noKnown
     );
   } catch (error) {
@@ -709,13 +812,14 @@ async function runSetScan() {
               objectRuntimeId: objectId,
               identity,
               commonType: ignoreCheck.commonType,
+              reason: ignoreCheck.reason,
               detectedSets: []
             };
             setData.ignoredItems.push(ignoredItem);
             modelRecord.ignoredObjects.push(ignoredItem);
             setData.csvRows.push([
               modelName(group.modelId), group.modelId, objectId, identity.label,
-              "ignored_by_common_type", ignoreCheck.commonType, ""
+              "ignored_by_filter", (ignoreCheck.commonType || "") + (ignoreCheck.reason ? " | " + ignoreCheck.reason : ""), ""
             ]);
             setProgress((processed / totalObjects) * 100);
             continue;
@@ -788,7 +892,7 @@ async function runSetScan() {
       "Objects found: " + totalObjects + "\n" +
       "Missing required sets: " + missingRequired + "\n" +
       "Objects with only required sets: " + onlyRequired + "\n" +
-      "Ignored by common type: " + ignored + "\n" +
+      "Ignored by filter: " + ignored + "\n" +
       "Objects with no known set: " + noKnown
     );
   } catch (error) {
@@ -884,25 +988,28 @@ function renderMissingList(items) {
 }
 
 function renderIgnoredList(items) {
-  if (!items.length) return `<h4>Objects ignored by common type</h4><div class="hint">None.</div>`;
+  if (!items.length) return `<h4>Objects ignored by filter</h4><div class="hint">None.</div>`;
 
   const counts = new Map();
-  items.forEach(item => counts.set(item.commonType || "Unknown", (counts.get(item.commonType || "Unknown") || 0) + 1));
+  items.forEach(item => {
+    const label = item.reason || (item.commonType ? "Common Type: " + item.commonType : "Unknown");
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
 
   const rows = Array.from(counts.entries())
     .sort((a,b) => a[0].localeCompare(b[0]))
-    .map(([type, count]) => `<tr><td>${escapeHtml(type)}</td><td>${count}</td></tr>`)
+    .map(([reason, count]) => `<tr><td>${escapeHtml(reason)}</td><td>${count}</td></tr>`)
     .join("");
 
   return `
     <details class="object">
-      <summary>Objects ignored by common type <span class="badge blue">${items.length}</span></summary>
+      <summary>Objects ignored by filter <span class="badge blue">${items.length}</span></summary>
       <div class="detail-body">
         <table>
-          <thead><tr><th>Common Type</th><th>Ignored objects</th></tr></thead>
+          <thead><tr><th>Ignore reason</th><th>Ignored objects</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        <div class="hint">These objects were skipped before checking because their Common Type matched the ignored type list.</div>
+        <div class="hint">These objects were skipped before checking because they matched the ignored Common Type list or the ignored property group/path keyword list.</div>
       </div>
     </details>
   `;
@@ -1213,20 +1320,24 @@ async function debugSelectedCommonType() {
 
     const flatCommonType = getCommonType(flat);
     const rawCommonType = getCommonTypeFromRaw(raw);
+    const keywordMatch = getPropertyPathKeywordMatch(flat, raw);
     const ignoreCheck = shouldIgnoreObject(flat, raw);
 
-    debug("Selected object Common Type debug", {
+    debug("Selected object ignore filter debug", {
       modelId: group.modelId,
       objectRuntimeId: objectId,
       flatCommonType,
       rawCommonType,
+      keywordMatch,
       finalCommonType: ignoreCheck.commonType,
+      ignoreReason: ignoreCheck.reason,
       ignoredTypes: getIgnoredCommonTypes(),
+      ignoredPathKeywords: getIgnoredPathKeywords(),
       willIgnore: ignoreCheck.ignore,
-      flattenedKeysContainingCommonOrType: Object.keys(flat).filter(k => {
+      flattenedKeysContainingCommonTypeIfcOrReference: Object.keys(flat).filter(k => {
         const kk = lower(k);
-        return kk.includes("common") || kk.includes("type");
-      }).slice(0, 100),
+        return kk.includes("common") || kk.includes("type") || kk.includes("ifc") || kk.includes("reference");
+      }).slice(0, 150),
       flattenedPropertiesSample: Object.fromEntries(
         Object.entries(flat).filter(([k]) => {
           const kk = lower(k);
@@ -1240,7 +1351,9 @@ async function debugSelectedCommonType() {
       "Selected object Common Type debug complete.\n" +
       "Flat Common Type: " + (flatCommonType || "-") + "\n" +
       "Raw Common Type: " + (rawCommonType || "-") + "\n" +
-      "Will ignore: " + (ignoreCheck.ignore ? "YES" : "NO") + "\n\n" +
+      "Keyword match: " + (keywordMatch || "-") + "\n" +
+      "Will ignore: " + (ignoreCheck.ignore ? "YES" : "NO") + "\n" +
+      "Reason: " + (ignoreCheck.reason || "-") + "\n\n" +
       "Open Debug output at the bottom if this still looks wrong."
     );
   } catch (error) {
