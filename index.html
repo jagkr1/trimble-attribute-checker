@@ -221,7 +221,7 @@
 <body>
   <header>
     <h1>Attribute Checker</h1>
-    <p>Checks visible model objects against project-specific attribute rules.</p>
+    <p>Checks loaded viewer objects against project-specific attribute rules.</p>
   </header>
 
   <main>
@@ -243,7 +243,7 @@
       <select id="ruleSetSelect"></select>
 
       <div class="buttons">
-        <button onclick="checkVisibleObjects()">Check all visible objects</button>
+        <button onclick="checkVisibleObjects()">Check all viewer objects</button>
         <button class="secondary" onclick="selectResultGroup('correct')">Select correct</button>
         <button class="secondary" onclick="selectResultGroup('incorrect')">Select incorrect</button>
         <button class="secondary" onclick="selectResultGroup('missing')">Select missing</button>
@@ -387,32 +387,40 @@
         ensureReady();
 
         const ruleSet = getSelectedRuleSet();
-        const visibleGroups = await getVisibleObjectGroups();
+        const viewerGroups = await getViewerObjectGroups();
 
-        if (visibleGroups.length === 0) {
-          setStatus("No visible objects found in the 3D viewer.");
+        if (viewerGroups.length === 0) {
+          setStatus("No model objects found in the 3D viewer. Try selecting one object and use Inspector to confirm the API connection.");
           return;
         }
 
-        const totalObjects = visibleGroups.reduce((sum, group) => sum + group.objectRuntimeIds.length, 0);
+        const totalObjects = viewerGroups.reduce((sum, group) => sum + group.objectRuntimeIds.length, 0);
         const attributeCount = (ruleSet.attributes || []).length;
 
-        if (!confirm("Check " + totalObjects + " visible object(s) against " + attributeCount + " attribute rule(s)?\n\nThis may take some time on large models.")) {
+        const ok = confirm(
+          "Check " + totalObjects + " object(s) currently available in the 3D viewer against " +
+          attributeCount + " attribute rule(s)?
+
+" +
+          "This can take some time on large models."
+        );
+
+        if (!ok) {
           setStatus("Check cancelled.");
           return;
         }
 
-        setStatus("Checking " + totalObjects + " visible object(s)...");
+        setStatus("Checking viewer objects... 0 / " + totalObjects);
 
         lastResults = [];
         lastCheckedGroups = { correct: [], incorrect: [], missing: [] };
 
         let checkedCount = 0;
-        const batchSize = 200;
+        const propertyBatchSize = 100;
 
-        for (const group of visibleGroups) {
-          for (let start = 0; start < group.objectRuntimeIds.length; start += batchSize) {
-            const batchIds = group.objectRuntimeIds.slice(start, start + batchSize);
+        for (const group of viewerGroups) {
+          for (let i = 0; i < group.objectRuntimeIds.length; i += propertyBatchSize) {
+            const batchIds = group.objectRuntimeIds.slice(i, i + propertyBatchSize);
             const objectProperties = await API.viewer.getObjectProperties(group.modelId, batchIds);
 
             for (const object of objectProperties) {
@@ -445,7 +453,7 @@
               checkedCount++;
             }
 
-            setStatus("Checking visible objects... " + checkedCount + " / " + totalObjects);
+            setStatus("Checking viewer objects... " + checkedCount + " / " + totalObjects);
             await pauseBriefly();
           }
         }
@@ -456,13 +464,16 @@
 
         const hiddenRows = Math.max(0, lastResults.length - MAX_DISPLAY_ROWS);
         const extraMessage = hiddenRows > 0
-          ? "\nOnly the first " + MAX_DISPLAY_ROWS + " result rows are shown in the table. Export CSV for the full result."
+          ? "
+Only the first " + MAX_DISPLAY_ROWS + " result rows are shown in the table. Export CSV for the full result."
           : "";
 
         setStatus("Check complete. Objects colored: green = correct, red = incorrect, orange = missing." + extraMessage);
       } catch (error) {
         console.error(error);
-        setStatus("Check failed.\n\n" + errorMessage(error));
+        setStatus("Check failed.
+
+" + errorMessage(error));
       }
     }
 
@@ -825,8 +836,25 @@
       return checkType;
     }
 
-    async function getVisibleObjectGroups() {
-      const objects = await API.viewer.getObjects(undefined, { visible: true });
+    async function getViewerObjectGroups() {
+      // First try Trimble's visible-state query.
+      // In some projects this returns only objects that have an explicit visible state,
+      // so if it returns nothing, fall back to all objects loaded in the 3D viewer.
+      let objects = [];
+
+      try {
+        const visibleObjects = await API.viewer.getObjects(undefined, { visible: true });
+        if (Array.isArray(visibleObjects) && countObjects(visibleObjects) > 0) {
+          objects = visibleObjects;
+          setStatus("Found visible-state objects. Preparing check...");
+        }
+      } catch (error) {
+        console.warn("Visible-state query did not return objects, falling back to all viewer objects.", error);
+      }
+
+      if (countObjects(objects) === 0) {
+        objects = await API.viewer.getObjects();
+      }
 
       if (!Array.isArray(objects)) return [];
 
@@ -836,6 +864,14 @@
           objectRuntimeIds: group.objectRuntimeIds || group.ids || []
         }))
         .filter(group => group.modelId && group.objectRuntimeIds.length > 0);
+    }
+
+    function countObjects(groups) {
+      if (!Array.isArray(groups)) return 0;
+      return groups.reduce((sum, group) => {
+        const ids = group.objectRuntimeIds || group.ids || [];
+        return sum + ids.length;
+      }, 0);
     }
 
     function pauseBriefly() {
