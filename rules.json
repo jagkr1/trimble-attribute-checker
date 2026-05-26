@@ -10,28 +10,57 @@
           "checkType": "numberList",
           "required": true,
           "acceptedValues": [
+            "100",
             "200",
             "300",
             "350",
-            "400"
+            "400",
+            "500"
           ],
           "min": "",
           "max": "",
-          "note": "Example MMI check"
+          "note": ""
         },
         {
-          "name": "Status",
-          "path": "0_Element.Status",
+          "name": "Utarbeidet av",
+          "path": "0_Element.Utarbeidet av",
+          "checkType": "text",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "0_Generell",
+      "attributes": [
+        {
+          "name": "Prosjekt",
+          "path": "0_Generell.Prosjekt",
           "checkType": "list",
           "required": true,
           "acceptedValues": [
-            "Approved",
-            "As built",
-            "Preliminary"
+            "RV22"
           ],
           "min": "",
           "max": "",
-          "note": "Example status check"
+          "note": ""
+        },
+        {
+          "name": "Fagdisiplin",
+          "path": "0_Generell.Fagdisiplin",
+          "checkType": "list",
+          "required": true,
+          "acceptedValues": [
+            "veg",
+            "kon",
+            "ele"
+          ],
+          "min": "",
+          "max": "",
+          "note": ""
         }
       ]
     }
