@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v14</title>
+  <title>Attribute Checker v15</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -84,7 +84,7 @@
       <summary>Advanced: ignored object types</summary>
       <div class="detail-body">
         <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
-        <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM" />
+        <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM, SLAB" />
         <div class="hint">
           Separate values with commas. These are skipped if the API returns a readable Common Type value.
         </div>
@@ -92,7 +92,7 @@
         <div style="height:8px;"></div>
 
         <label for="ignoredPathKeywords">Ignore objects with these property group/path keywords</label>
-        <input id="ignoredPathKeywords" type="text" value="Ifc Project, Ifc Site, Ifc Building, Ifc Building Storey" />
+        <input id="ignoredPathKeywords" type="text" value="Ifc Project, Project, Ifc Site, Ifc Building, Ifc Building Storey" />
         <div class="hint">
           Separate values with commas. This is a fallback for hierarchy/container objects where Trimble shows groups such as Ifc Building Storey, but the API does not return Common Type clearly.
         </div>
@@ -336,26 +336,45 @@ function getPropertyPathKeywordMatch(flat, raw = null) {
   const ignoredKeywords = getIgnoredPathKeywords();
   if (!ignoredKeywords.length) return "";
 
+  function keywordMatches(candidateText, keyword) {
+    const candidate = normalizeKeyword(candidateText);
+    if (!candidate || !keyword) return false;
+
+    // Generic short words like "project" are risky as contains-matches because
+    // many normal objects can have project metadata. For these, require exact
+    // group/name match or IFC-prefixed match.
+    const generic = ["project", "site", "building", "beam", "slab"];
+    if (generic.includes(keyword)) {
+      return candidate === keyword || candidate === "ifc" + keyword;
+    }
+
+    // More specific keywords like ifcbuildingstorey can safely use contains.
+    return candidate.includes(keyword);
+  }
+
   const flatKeys = Object.keys(flat || {});
   for (const key of flatKeys) {
-    const normalizedKey = normalizeKeyword(key);
-    const matched = ignoredKeywords.find(keyword => normalizedKey.includes(keyword));
+    const matched = ignoredKeywords.find(keyword => keywordMatches(key, keyword));
     if (matched) return key;
   }
 
   const rawNames = [];
+  const rawValues = [];
 
-  function collectNames(node) {
+  function collectNamesAndValues(node) {
     if (node === undefined || node === null) return;
 
     if (Array.isArray(node)) {
-      node.forEach(collectNames);
+      node.forEach(collectNamesAndValues);
       return;
     }
 
-    if (typeof node !== "object") return;
+    if (typeof node !== "object") {
+      if (typeof node === "string" || typeof node === "number") rawValues.push(String(node));
+      return;
+    }
 
-    const candidates = [
+    const nameCandidates = [
       node.name, node.Name,
       node.key, node.Key,
       node.displayName, node.DisplayName,
@@ -364,32 +383,59 @@ function getPropertyPathKeywordMatch(flat, raw = null) {
       node.type, node.Type
     ];
 
-    for (const candidate of candidates) {
+    const valueCandidates = [
+      node.value, node.Value,
+      node.val, node.Val,
+      node.text, node.Text,
+      node.displayValue, node.DisplayValue
+    ];
+
+    for (const candidate of nameCandidates) {
       if (candidate === undefined || candidate === null) continue;
 
       if (typeof candidate === "object") {
         const nested = candidate.value ?? candidate.Value ?? candidate.text ?? candidate.Text ?? candidate.name ?? candidate.Name;
-        if (nested !== undefined && nested !== null && typeof nested !== "object") {
-          rawNames.push(String(nested));
-        }
+        if (nested !== undefined && nested !== null && typeof nested !== "object") rawNames.push(String(nested));
       } else {
         rawNames.push(String(candidate));
       }
     }
 
-    Object.keys(node).forEach(key => collectNames(node[key]));
+    for (const candidate of valueCandidates) {
+      if (candidate === undefined || candidate === null) continue;
+
+      if (typeof candidate === "object") {
+        const nested = candidate.value ?? candidate.Value ?? candidate.text ?? candidate.Text ?? candidate.name ?? candidate.Name;
+        if (nested !== undefined && nested !== null && typeof nested !== "object") rawValues.push(String(nested));
+      } else {
+        rawValues.push(String(candidate));
+      }
+    }
+
+    Object.keys(node).forEach(key => collectNamesAndValues(node[key]));
   }
 
-  collectNames(raw);
+  collectNamesAndValues(raw);
 
+  // Check property group/name candidates.
   for (const name of rawNames) {
-    const normalizedName = normalizeKeyword(name);
-    const matched = ignoredKeywords.find(keyword => normalizedName.includes(keyword));
+    const matched = ignoredKeywords.find(keyword => keywordMatches(name, keyword));
     if (matched) return name;
+  }
+
+  // Extra fallback: if raw values contain an exact ignored type value such as
+  // PROJECT or SLAB, use that as an ignore signal. Exact match only.
+  const ignoredTypeValues = getIgnoredCommonTypes();
+  for (const value of rawValues) {
+    const normalizedValue = normalizeTypeValue(value);
+    if (ignoredTypeValues.includes(normalizedValue)) {
+      return "Exact raw value: " + value;
+    }
   }
 
   return "";
 }
+
 
 function normalizeTypeValue(value) {
   return String(value || "")
