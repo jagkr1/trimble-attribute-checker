@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v10</title>
+  <title>Attribute Checker v12</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -85,7 +85,7 @@
         <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
         <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM" />
         <div class="hint">
-          Separate values with commas. These objects are skipped before checking. Add more here if you find more non-physical/container types causing false errors.
+          Separate values with commas. These objects are skipped before checking. Default examples: PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM. Add more here if you find more non-physical/container types causing false errors.
         </div>
       </div>
     </details>
@@ -315,20 +315,57 @@ function normalizeTypeValue(value) {
 
 function getCommonType(flat) {
   const keys = Object.keys(flat);
+  const ignoredTypes = getIgnoredCommonTypes();
 
-  const preferred = keys.find(key => {
-    const k = lower(key);
-    return k.endsWith("common type") || k.endsWith(".commontype") || k.includes("common type") || k.includes("commontype");
+  function normPath(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/_/g, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "")
+      .toLowerCase();
+  }
+
+  // Best case: the flattened property path contains "Common Type".
+  // This catches paths such as:
+  // Reference Object.Common Type
+  // ReferenceObject.CommonType
+  // Reference Object.Properties.Common Type.Value
+  const commonTypeKey = keys.find(key => normPath(key).includes("commontype"));
+  if (commonTypeKey && !isBlank(flat[commonTypeKey])) {
+    return String(flat[commonTypeKey]).trim();
+  }
+
+  // Some models/API responses may flatten the value under a more generic path,
+  // but still include both "common" and "type" somewhere in the path.
+  const commonAndTypeKey = keys.find(key => {
+    const k = normPath(key);
+    return k.includes("common") && k.includes("type");
+  });
+  if (commonAndTypeKey && !isBlank(flat[commonAndTypeKey])) {
+    return String(flat[commonAndTypeKey]).trim();
+  }
+
+  // Fallback: if a property value itself is one of the ignored type values,
+  // and the property path looks type-related, treat it as Common Type.
+  // This helps if the API returns a path like "Reference Object.Type".
+  const typeValueKey = keys.find(key => {
+    const path = normPath(key);
+    const value = normalizeTypeValue(flat[key]);
+    return ignoredTypes.includes(value) && (
+      path.includes("referenceobject") ||
+      path.endsWith("type") ||
+      path.includes("objecttype") ||
+      path.includes("entitytype")
+    );
   });
 
-  if (preferred) return String(flat[preferred] || "").trim();
+  if (typeValueKey && !isBlank(flat[typeValueKey])) {
+    return String(flat[typeValueKey]).trim();
+  }
 
-  const typeLike = keys.find(key => {
-    const k = lower(key);
-    return k.endsWith(".type") || k.endsWith(" type") || k.includes("reference object.common");
-  });
-
-  return typeLike ? String(flat[typeLike] || "").trim() : "";
+  return "";
 }
 
 function shouldIgnoreObject(flat) {
@@ -637,7 +674,7 @@ async function runSetScan() {
 
           if (requiredSets.length > 0 && missingSets.length > 0) {
             missingRequired++;
-            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets, missingSets };
+            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets, missingSets, commonType: getCommonType(flat) };
             setData.missingItems.push(item);
             modelRecord.missingObjects.push(item);
 
@@ -769,7 +806,7 @@ function renderMissingList(items) {
       <tbody>
         ${items.map(item => `
           <tr>
-            <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
+            <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}${item.commonType ? " | Common Type: " + escapeHtml(item.commonType) : ""}</span></td>
             <td class="problem">${escapeHtml(item.missingSets.join(", "))}</td>
             <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
             <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
