@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v5</title>
+  <title>Attribute Checker v6</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
@@ -40,6 +40,10 @@
     details { border:1px solid var(--border); border-radius:8px; margin:8px 0; background:#fff; }
     summary { cursor:pointer; padding:10px; font-weight:bold; background:#f8fafc; border-radius:8px; }
     details[open] summary { border-bottom:1px solid var(--border); border-radius:8px 8px 0 0; }
+    .model-details { margin-left:0; }
+    .model-object-list { margin-left:22px; padding:4px 0 8px 0; border-left:3px solid #e5e7eb; }
+    .object-details { margin-left:10px; margin-right:8px; }
+    .object-details summary { background:#ffffff; font-weight:normal; }
     table { width:100%; border-collapse:collapse; font-size:12px; }
     th, td { border-bottom:1px solid #edf0f3; padding:7px; text-align:left; vertical-align:top; }
     th { background:#f8fafc; color:#374151; }
@@ -720,13 +724,14 @@
         const problemCount = model.objects.reduce((sum, obj) => sum + obj.problems.length, 0);
 
         const details = document.createElement("details");
+        details.className = "model-details";
         details.innerHTML = `
           <summary>
             ${escapeHtml(model.modelName)}
             <span class="pill bad">${model.objects.length} failed object(s)</span>
             <span class="pill warn">${problemCount} problem attribute(s)</span>
           </summary>
-          <div id="model-${safeId(model.modelId)}"></div>
+          <div id="model-${safeId(model.modelId)}" class="model-object-list"></div>
         `;
 
         details.addEventListener("toggle", () => {
@@ -746,6 +751,7 @@
 
       objects.forEach(obj => {
         const wrapper = document.createElement("details");
+        wrapper.className = "object-details";
 
         wrapper.innerHTML = `
           <summary>
@@ -758,7 +764,7 @@
               <div class="object-title">Runtime ID: ${escapeHtml(obj.objectRuntimeId)}</div>
               <div class="object-meta">${escapeHtml(obj.objectIdentity.detail)}</div>
             </div>
-            <button class="small-btn secondary" onclick="selectOneObject('${escapeJs(obj.modelId)}', '${escapeJs(String(obj.objectRuntimeId))}')">Select</button>
+            <button class="small-btn secondary" onclick="selectOneObject(\'${escapeJs(String(model.modelId))}\', \'${escapeJs(String(obj.objectRuntimeId))}\')">Select</button>
           </div>
           <table>
             <thead>
@@ -803,20 +809,20 @@
       try {
         ensureReady();
 
-        const passAndNoSet = [...scanData.passItems, ...scanData.noKnownSetItems];
-
         if (!scanData.failItems.length) {
           setStatus("No failed objects available. Run a scan first.");
           return;
         }
 
-        await setVisibility(passAndNoSet, false);
-        await setVisibility(scanData.failItems, true);
+        const failedCount = scanData.failItems.length;
+        if (!confirm("This will isolate " + failedCount + " failed object(s) and hide the others. Continue?")) return;
 
-        setStatus("Showing only failed objects. Passed and no-known-set objects were hidden.");
+        await isolateItems(scanData.failItems);
+
+        setStatus("Showing only failed objects using runtime object IDs. Failed objects isolated: " + failedCount + ".");
       } catch (error) {
         console.error(error);
-        setStatus("Could not hide passed objects.\n\n" + errorMessage(error));
+        setStatus("Could not isolate failed objects.\n\n" + errorMessage(error));
       }
     }
 
@@ -831,28 +837,89 @@
       }
     }
 
+    function makeRuntimeSelector(modelId, ids) {
+      const cleanIds = (ids || [])
+        .map(id => {
+          if (typeof id === "number") return id;
+          const parsed = Number(id);
+          return Number.isFinite(parsed) ? parsed : null;
+        })
+        .filter(id => id !== null && id !== undefined);
+
+      if (!modelId || !cleanIds.length) return null;
+
+      return {
+        modelObjectIds: [
+          {
+            modelId: String(modelId),
+            objectRuntimeIds: cleanIds,
+            recursive: false
+          }
+        ]
+      };
+    }
+
     async function setVisibility(items, visible) {
       const groups = groupItemsByModel(items);
+
       for (const group of groups) {
-        await API.viewer.setObjectState(
-          { modelObjectIds: [{ modelId: group.modelId, objectRuntimeIds: group.objectRuntimeIds }] },
-          { visible }
-        );
+        const selector = makeRuntimeSelector(group.modelId, group.objectRuntimeIds);
+        if (!selector) continue;
+
+        await API.viewer.setObjectState(selector, { visible });
         await pause(5);
+      }
+    }
+
+    async function isolateItems(items) {
+      const groups = groupItemsByModel(items)
+        .map(group => ({
+          modelId: String(group.modelId),
+          entityIds: group.objectRuntimeIds
+            .map(id => Number(id))
+            .filter(id => Number.isFinite(id))
+        }))
+        .filter(group => group.entityIds.length);
+
+      if (!groups.length) {
+        throw new Error("No valid failed object runtime IDs available to isolate.");
+      }
+
+      if (API.viewer.isolateEntities) {
+        await API.viewer.isolateEntities(groups);
+        return;
+      }
+
+      // Fallback if isolateEntities is not available.
+      await API.viewer.setObjectState(undefined, { visible: false });
+      for (const group of groups) {
+        const selector = makeRuntimeSelector(group.modelId, group.entityIds);
+        if (selector) {
+          await API.viewer.setObjectState(selector, { visible: true });
+          await pause(5);
+        }
       }
     }
 
     async function selectOneObject(modelId, objectId) {
       try {
         ensureReady();
-        const numericOrStringId = isFiniteNumber(objectId) ? Number(objectId) : objectId;
 
-        await API.viewer.setSelection(
-          { modelObjectIds: [{ modelId, objectRuntimeIds: [numericOrStringId] }] },
-          "set"
-        );
+        const selector = makeRuntimeSelector(modelId, [objectId]);
+        if (!selector) {
+          throw new Error("Invalid object reference: modelId=" + modelId + ", objectId=" + objectId);
+        }
 
-        setStatus("Selected object " + objectId + ".");
+        await API.viewer.setSelection(selector, "set");
+
+        // Fit camera to the selected runtime object when supported.
+        try {
+          await API.viewer.setCamera(selector, { animationTime: 500 });
+        } catch (cameraError) {
+          console.warn("Camera fit failed, but selection may still have worked.", cameraError);
+        }
+
+        setStatus("Selected object runtime ID " + objectId + " in model " + modelId + ".");
       } catch (error) {
         console.error(error);
         setStatus("Could not select object.\n\n" + errorMessage(error));
