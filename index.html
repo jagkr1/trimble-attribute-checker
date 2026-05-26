@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v12</title>
+  <title>Attribute Checker v13</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -73,6 +73,7 @@
     <div class="buttons">
       <button onclick="loadRules()">Update rules</button>
       <button class="secondary" onclick="showAllObjects()">Show all objects again</button>
+      <button class="secondary" onclick="debugSelectedCommonType()">Debug selected Common Type</button>
       <button class="danger" onclick="clearAllReports()">Clear reports</button>
     </div>
     <div class="hint">
@@ -368,8 +369,73 @@ function getCommonType(flat) {
   return "";
 }
 
-function shouldIgnoreObject(flat) {
-  const commonType = getCommonType(flat);
+function getCommonTypeFromRaw(raw) {
+  const foundValues = [];
+
+  function normName(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/_/g, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "")
+      .toLowerCase();
+  }
+
+  function primitive(value) {
+    return value !== undefined && value !== null && typeof value !== "object";
+  }
+
+  function walk(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+
+    if (typeof node !== "object") return;
+
+    const name =
+      node.name ?? node.Name ??
+      node.key ?? node.Key ??
+      node.displayName ?? node.DisplayName ??
+      node.label ?? node.Label ??
+      node.title ?? node.Title;
+
+    const value =
+      node.value ?? node.Value ??
+      node.val ?? node.Val ??
+      node.text ?? node.Text ??
+      node.displayValue ?? node.DisplayValue;
+
+    if (name && normName(name) === "commontype" && primitive(value) && !isBlank(value)) {
+      foundValues.push(String(value).trim());
+    }
+
+    // Some API responses store property name/value as nested objects.
+    // Example: { name: { value: "Common Type" }, value: { value: "PROJECT" } }
+    const nestedNameValue = name && typeof name === "object"
+      ? (name.value ?? name.Value ?? name.text ?? name.Text)
+      : null;
+
+    const nestedActualValue = value && typeof value === "object"
+      ? (value.value ?? value.Value ?? value.text ?? value.Text)
+      : null;
+
+    if (nestedNameValue && normName(nestedNameValue) === "commontype" && primitive(nestedActualValue) && !isBlank(nestedActualValue)) {
+      foundValues.push(String(nestedActualValue).trim());
+    }
+
+    Object.keys(node).forEach(key => walk(node[key]));
+  }
+
+  walk(raw);
+  return foundValues[0] || "";
+}
+
+function shouldIgnoreObject(flat, raw = null) {
+  const commonType = getCommonType(flat) || getCommonTypeFromRaw(raw);
   if (!commonType) return { ignore: false, commonType: "" };
 
   const ignored = getIgnoredCommonTypes();
@@ -419,7 +485,7 @@ async function runValueScan() {
         for (const objectId of batchIds) {
           const objectProps = propertyMap.get(String(objectId));
           const flat = objectProps ? flattenProperties(objectProps) : {};
-          const ignoreCheck = shouldIgnoreObject(flat);
+          const ignoreCheck = shouldIgnoreObject(flat, objectProps);
 
           processed++;
 
@@ -631,7 +697,7 @@ async function runSetScan() {
         for (const objectId of batchIds) {
           const objectProps = propertyMap.get(String(objectId));
           const flat = objectProps ? flattenProperties(objectProps) : {};
-          const ignoreCheck = shouldIgnoreObject(flat);
+          const ignoreCheck = shouldIgnoreObject(flat, objectProps);
 
           processed++;
 
@@ -1125,6 +1191,61 @@ function objectIdentity(objectId, flat) {
     label: "Runtime " + objectId,
     description: "No GUID-like property found. Using Trimble runtime object ID."
   };
+}
+
+async function debugSelectedCommonType() {
+  try {
+    ensureReady();
+
+    const selection = await API.viewer.getSelection();
+    const groups = normalizeObjectGroups(selection && selection.modelObjectIds ? selection.modelObjectIds : selection);
+
+    if (!groups.length) {
+      setStatus("Select one object in the viewer first, then press Debug selected Common Type.");
+      return;
+    }
+
+    const group = groups[0];
+    const objectId = group.objectRuntimeIds[0];
+    const props = await getObjectPropertiesRobust(group.modelId, [objectId]);
+    const raw = Array.isArray(props) ? props[0] : props;
+    const flat = raw ? flattenProperties(raw) : {};
+
+    const flatCommonType = getCommonType(flat);
+    const rawCommonType = getCommonTypeFromRaw(raw);
+    const ignoreCheck = shouldIgnoreObject(flat, raw);
+
+    debug("Selected object Common Type debug", {
+      modelId: group.modelId,
+      objectRuntimeId: objectId,
+      flatCommonType,
+      rawCommonType,
+      finalCommonType: ignoreCheck.commonType,
+      ignoredTypes: getIgnoredCommonTypes(),
+      willIgnore: ignoreCheck.ignore,
+      flattenedKeysContainingCommonOrType: Object.keys(flat).filter(k => {
+        const kk = lower(k);
+        return kk.includes("common") || kk.includes("type");
+      }).slice(0, 100),
+      flattenedPropertiesSample: Object.fromEntries(
+        Object.entries(flat).filter(([k]) => {
+          const kk = lower(k);
+          return kk.includes("common") || kk.includes("type") || kk.includes("reference");
+        }).slice(0, 100)
+      ),
+      rawPreview: raw
+    });
+
+    setStatus(
+      "Selected object Common Type debug complete.\n" +
+      "Flat Common Type: " + (flatCommonType || "-") + "\n" +
+      "Raw Common Type: " + (rawCommonType || "-") + "\n" +
+      "Will ignore: " + (ignoreCheck.ignore ? "YES" : "NO") + "\n\n" +
+      "Open Debug output at the bottom if this still looks wrong."
+    );
+  } catch (error) {
+    setStatus("Debug selected Common Type failed.\n\n" + errorMessage(error));
+  }
 }
 
 async function selectOneObject(modelId, objectId) {
