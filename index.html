@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v6</title>
+  <title>Attribute Checker v8</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
-
   <style>
     :root {
       --bg:#f4f6f8; --panel:#fff; --border:#d7dde4; --text:#111827; --muted:#6b7280;
@@ -18,1105 +16,1174 @@
     header { background:#111827; color:#fff; padding:14px 16px; }
     header h1 { margin:0; font-size:18px; }
     header p { margin:5px 0 0; color:#cbd5e1; font-size:12px; }
-    main { padding:12px; max-width:1200px; }
+    main { padding:12px; max-width:1220px; }
     .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px; }
-    .buttons { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-    button { border:0; border-radius:7px; padding:9px 11px; background:var(--primary); color:white; cursor:pointer; font-size:13px; }
+    .buttons { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    button { border:0; border-radius:7px; padding:8px 10px; background:var(--primary); color:#fff; cursor:pointer; font-size:13px; }
     button:hover { background:var(--primary-dark); }
     button.secondary { background:var(--secondary); }
     button.secondary:hover { background:#334155; }
     button.danger { background:var(--danger); }
-    button:disabled { opacity:.55; cursor:not-allowed; }
-    select { width:100%; border:1px solid var(--border); border-radius:7px; padding:8px; font-size:13px; background:white; }
-    label { font-weight:bold; display:block; margin-bottom:5px; color:#374151; font-size:12px; }
-    .status { padding:9px; border-radius:7px; background:#f8fafc; border:1px solid var(--border); color:#374151; white-space:pre-wrap; font-size:12px; line-height:1.45; }
-    .hint { font-size:12px; color:var(--muted); line-height:1.45; margin-top:5px; }
-    .summary { display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; }
-    .card { border:1px solid var(--border); background:#f8fafc; border-radius:8px; padding:8px; text-align:center; }
-    .num { font-size:21px; font-weight:bold; margin-bottom:2px; }
-    .good { color:var(--good); } .bad { color:var(--danger); } .warn { color:var(--warning); } .info { color:var(--info); } .muted { color:var(--muted); }
-    .progress-wrap { width:100%; height:12px; background:#e5e7eb; border-radius:999px; overflow:hidden; margin-top:8px; }
-    .progress-bar { height:100%; width:0%; background:var(--primary); transition:width .15s ease; }
-    details { border:1px solid var(--border); border-radius:8px; margin:8px 0; background:#fff; }
-    summary { cursor:pointer; padding:10px; font-weight:bold; background:#f8fafc; border-radius:8px; }
-    details[open] summary { border-bottom:1px solid var(--border); border-radius:8px 8px 0 0; }
-    .model-details { margin-left:0; }
-    .model-object-list { margin-left:22px; padding:4px 0 8px 0; border-left:3px solid #e5e7eb; }
-    .object-details { margin-left:10px; margin-right:8px; }
-    .object-details summary { background:#ffffff; font-weight:normal; }
-    table { width:100%; border-collapse:collapse; font-size:12px; }
-    th, td { border-bottom:1px solid #edf0f3; padding:7px; text-align:left; vertical-align:top; }
-    th { background:#f8fafc; color:#374151; }
-    .problem { background:#fef2f2; color:#991b1b; font-weight:bold; }
-    .missing { background:#fff7ed; color:#9a3412; font-weight:bold; }
-    .ok { color:var(--good); font-weight:bold; }
-    .pill { display:inline-block; padding:3px 7px; border-radius:999px; color:white; font-size:11px; margin-right:4px; }
-    .pill.bad { background:var(--danger); color:white; } .pill.warn { background:var(--warning); color:#111827; } .pill.good { background:var(--good); color:white; } .pill.muted { background:#64748b; color:white; }
-    .small-btn { padding:5px 8px; font-size:12px; }
-    .object-head { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:8px 10px; border-bottom:1px solid #edf0f3; }
-    .object-head:last-child { border-bottom:0; }
-    .object-title { font-weight:bold; }
-    .object-meta { color:var(--muted); font-size:12px; margin-top:3px; overflow-wrap:anywhere; }
-    .debug { white-space:pre-wrap; word-break:break-word; background:#0f172a; color:#e5e7eb; border-radius:8px; padding:10px; max-height:280px; overflow:auto; font-size:11px; }
+    button.small { padding:5px 8px; font-size:12px; }
+    select, input[type="text"], input[type="number"] { border:1px solid var(--border); border-radius:7px; padding:7px; font-size:13px; background:white; }
+    label { font-weight:bold; display:block; margin-bottom:4px; font-size:12px; color:#374151; }
+    .hint { font-size:12px; color:var(--muted); line-height:1.4; margin-top:7px; }
+    .status { padding:9px; border-radius:7px; border:1px solid var(--border); background:#f8fafc; color:var(--muted); white-space:pre-wrap; font-size:12px; line-height:1.4; margin-top:10px; }
+    .progress-wrap { height:8px; background:#e5e7eb; border-radius:999px; margin-top:10px; overflow:hidden; }
+    .progress-bar { height:100%; width:0%; background:var(--primary); transition:width .2s; }
+    .tabs { display:flex; gap:6px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .tab-button { background:#e5e7eb; color:#111827; border-radius:8px 8px 0 0; padding:9px 12px; }
+    .tab-button.active { background:var(--primary); color:white; }
+    .tab { display:none; }
+    .tab.active { display:block; }
+    .summary { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+    .card { border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center; background:#f8fafc; min-height:60px; }
+    .num { font-size:21px; font-weight:bold; margin-bottom:4px; }
+    .good{ color:var(--good); } .bad{ color:var(--danger); } .warn{ color:var(--warning); } .info{ color:var(--info); }
+    details { border:1px solid var(--border); border-radius:8px; margin:8px 0; background:#f8fafc; }
+    summary { cursor:pointer; padding:9px; font-weight:bold; }
+    details.model > summary { background:#f1f5f9; }
+    details.object { margin-left:26px; background:#fff; }
+    details.object > summary { font-weight:normal; }
+    .detail-body { padding:10px; border-top:1px solid var(--border); }
+    .badge { display:inline-block; padding:3px 6px; border-radius:999px; color:white; font-size:11px; margin-left:5px; }
+    .badge.red { background:var(--danger); } .badge.orange { background:var(--warning); color:#111827; } .badge.green { background:var(--good); } .badge.blue { background:#64748b; }
+    table { width:100%; border-collapse:collapse; font-size:12px; background:white; }
+    th,td { border-bottom:1px solid #edf0f3; padding:6px; text-align:left; vertical-align:top; }
+    th { background:#f8fafc; }
+    td.problem { background:#fff7ed; color:#b91c1c; font-weight:bold; }
+    .set-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:6px; margin-top:8px; }
+    .check-item { border:1px solid var(--border); background:#f8fafc; border-radius:7px; padding:7px; display:flex; align-items:center; gap:7px; }
     .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .small-text { font-size:12px; color:var(--muted); }
+    .pill { display:inline-block; border-radius:999px; padding:3px 7px; background:#e2e8f0; color:#334155; font-size:11px; margin:2px; }
     @media (max-width:900px) { .summary{grid-template-columns:repeat(2,1fr);} .two-col{grid-template-columns:1fr;} }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Attribute Checker</h1>
-    <p>Scans loaded viewer objects, detects which rule sets each object has, and reports missing or incorrect attributes.</p>
-  </header>
+<header>
+  <h1>Attribute Checker</h1>
+  <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer.</p>
+</header>
 
-  <main>
+<main>
+  <div class="panel">
+    <div class="buttons">
+      <button onclick="loadRules()">Update rules</button>
+      <button class="secondary" onclick="showAllObjects()">Show all objects again</button>
+      <button class="danger" onclick="clearAllReports()">Clear reports</button>
+    </div>
+    <div class="hint">
+      Rules are loaded automatically from <b>rules.json</b> in the same GitHub Pages folder. Attribute set lists in the second tab come from that JSON file.
+    </div>
+    <div id="status" class="status">Starting extension...</div>
+    <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
+  </div>
+
+  <div class="tabs">
+    <button id="tabBtnValues" class="tab-button active" onclick="openTab('values')">Attribute values</button>
+    <button id="tabBtnSets" class="tab-button" onclick="openTab('sets')">Attribute sets</button>
+  </div>
+
+  <section id="tabValues" class="tab active">
     <div class="panel">
       <div class="buttons">
-        <button onclick="loadRules()">Update rules</button>
-        <button onclick="runScan()">Run object scan</button>
-        <button class="secondary" onclick="showOnlyFailed()">Show only failed objects</button>
-        <button class="secondary" onclick="showAllObjects()">Show all objects again</button>
-        <button class="secondary" onclick="exportReportCsv()">Export report CSV</button>
-        <button class="danger" onclick="resetReport()">Clear report</button>
+        <button onclick="runValueScan()">Run value scan</button>
+        <button class="secondary" onclick="showOnlyValueFailures()">Show only failed objects</button>
+        <button class="secondary" onclick="exportValueCsv()">Export value report CSV</button>
       </div>
       <div class="hint">
-        Rules are loaded automatically from <b>rules.json</b> in the same GitHub Pages folder as this extension.
-        The user does not need to edit any URL.
+        This checks only the rule sets that are actually detected on each object. Objects without any known rule set are listed separately and are not treated as failed.
       </div>
-      <div id="status" class="status" style="margin-top:10px;">Starting extension...</div>
-      <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
-    </div>
-
-    <div class="panel">
-      <div class="two-col">
-        <div>
-          <label for="modeSelect">Scan mode</label>
-          <select id="modeSelect">
-            <option value="detectedOnly">Check each object only against the rule sets it actually has</option>
-            <option value="allSets">Check every object against every rule set (usually too strict)</option>
-          </select>
-          <div class="hint">
-            Recommended: detected sets only. This avoids false errors when different models/objects use different property sets.
-          </div>
-        </div>
-        <div>
-          <label for="batchSize">Property batch size</label>
-          <select id="batchSize">
-            <option value="50">50 objects per batch - safer</option>
-            <option value="100" selected>100 objects per batch - recommended</option>
-            <option value="200">200 objects per batch - faster</option>
-            <option value="500">500 objects per batch - heavy</option>
-          </select>
-          <div class="hint">
-            Use a smaller batch if Trimble Connect becomes slow or the scan fails.
-          </div>
-        </div>
+      <div style="margin-top:10px; max-width:260px;">
+        <label for="batchSize">Batch size</label>
+        <select id="batchSize">
+          <option value="50">50 objects per batch - safer</option>
+          <option value="100" selected>100 objects per batch - recommended</option>
+          <option value="200">200 objects per batch - faster</option>
+          <option value="500">500 objects per batch - heavy</option>
+        </select>
       </div>
     </div>
 
     <div class="panel">
       <div class="summary">
-        <div class="card"><div id="sumObjects" class="num info">0</div><div>Objects found</div></div>
-        <div class="card"><div id="sumChecked" class="num info">0</div><div>Objects checked</div></div>
-        <div class="card"><div id="sumPassed" class="num good">0</div><div>Passed</div></div>
-        <div class="card"><div id="sumFailed" class="num bad">0</div><div>Failed</div></div>
-        <div class="card"><div id="sumNoSet" class="num warn">0</div><div>No known set</div></div>
+        <div class="card"><div id="vObjects" class="num info">0</div><div>Objects found</div></div>
+        <div class="card"><div id="vChecked" class="num info">0</div><div>Objects checked</div></div>
+        <div class="card"><div id="vPassed" class="num good">0</div><div>Passed</div></div>
+        <div class="card"><div id="vFailed" class="num bad">0</div><div>Failed</div></div>
+        <div class="card"><div id="vNoKnown" class="num warn">0</div><div>Not checked - no matching set</div></div>
       </div>
     </div>
 
     <div class="panel">
-      <h3 style="margin-top:0;">Problem report by model</h3>
-      <div id="report"></div>
+      <h3 style="margin-top:0;">Value problem report by model</h3>
+      <div id="valueReport">No value scan run yet.</div>
+    </div>
+  </section>
+
+  <section id="tabSets" class="tab">
+    <div class="panel">
+      <h3 style="margin-top:0;">Choose required attribute sets</h3>
+      <div class="buttons">
+        <button class="secondary" onclick="selectAllRequiredSets()">Select all</button>
+        <button class="secondary" onclick="clearRequiredSets()">Select none</button>
+        <button onclick="runSetScan()">Run attribute set scan</button>
+        <button class="secondary" onclick="showOnlySetProblems()">Show only objects missing required sets</button>
+        <button class="secondary" onclick="exportSetCsv()">Export set report CSV</button>
+      </div>
+      <div class="hint">
+        Choose which sets are required for this scan. Selecting zero required sets is allowed and works as inventory mode: it only counts which sets exist on objects.
+      </div>
+      <div id="setCheckboxes" class="set-grid"></div>
     </div>
 
     <div class="panel">
-      <details>
-        <summary>Debug / raw notes</summary>
-        <pre id="debug" class="debug">No debug output yet.</pre>
-      </details>
+      <div class="summary">
+        <div class="card"><div id="sObjects" class="num info">0</div><div>Objects found</div></div>
+        <div class="card"><div id="sAllRequired" class="num good">0</div><div>Has all required sets</div></div>
+        <div class="card"><div id="sMissingRequired" class="num bad">0</div><div>Missing required sets</div></div>
+        <div class="card"><div id="sOnlyRequired" class="num warn">0</div><div>Only required sets</div></div>
+        <div class="card"><div id="sNoKnown" class="num warn">0</div><div>No known set</div></div>
+      </div>
     </div>
-  </main>
 
-  <script>
-    let API = null;
-    let rules = { version: 1, sets: [] };
-    let modelNameById = new Map();
+    <div class="panel">
+      <h3 style="margin-top:0;">Attribute set report by model</h3>
+      <div id="setReport">No attribute set scan run yet.</div>
+    </div>
+  </section>
 
-    let scanData = {
-      allGroups: [],
-      passItems: [],
-      failItems: [],
-      noKnownSetItems: [],
-      failuresByModel: new Map(),
-      csvRows: []
-    };
+  <div class="panel">
+    <details>
+      <summary>Debug output</summary>
+      <pre id="debugOutput" style="white-space:pre-wrap; word-break:break-word; background:#0f172a; color:#e5e7eb; padding:10px; border-radius:8px; max-height:280px; overflow:auto;">No debug output yet.</pre>
+    </details>
+  </div>
+</main>
 
-    init();
+<script>
+let API = null;
+let rules = { version: 1, sets: [] };
+let modelNameById = new Map();
 
-    async function init() {
-      try {
-        if (!window.TrimbleConnectWorkspace) {
-          setStatus("Workspace API script not found.");
-          return;
-        }
+let valueData = emptyValueData();
+let setData = emptySetData();
 
-        API = await TrimbleConnectWorkspace.connect(window.parent, (event, data) => {
-          console.log("Trimble event:", event, data);
-        });
+init();
 
-        try {
-          await API.ui.setMenu({ title: "Attribute Checker", command: "attribute_checker_open" });
-          await API.ui.setActiveMenuItem("attribute_checker_open");
-        } catch (uiError) {
-          console.warn("Menu setup failed but extension can continue.", uiError);
-        }
+function emptyValueData() {
+  return { allGroups: [], passItems: [], failItems: [], noKnownSetItems: [], failuresByModel: new Map(), csvRows: [] };
+}
 
-        setStatus("Connected. Press Update rules, then Run object scan.");
-        await loadRules();
-      } catch (error) {
-        console.error(error);
-        setStatus("Could not connect to Trimble Connect.\n\n" + errorMessage(error));
-      }
+function emptySetData() {
+  return { allGroups: [], missingItems: [], onlyRequiredItems: [], reportByModel: new Map(), csvRows: [] };
+}
+
+async function init() {
+  try {
+    if (!window.TrimbleConnectWorkspace) {
+      setStatus("Workspace API script not found.");
+      return;
     }
 
-    async function loadRules() {
-      try {
-        const url = new URL("rules.json", window.location.href);
-        url.searchParams.set("v", Date.now().toString());
+    API = await TrimbleConnectWorkspace.connect(window.parent, (event, data) => {
+      console.log("Trimble event:", event, data);
+    });
 
-        const response = await fetch(url.toString(), { cache: "no-store" });
-        if (!response.ok) throw new Error("Could not load rules.json. HTTP " + response.status);
-
-        const loaded = await response.json();
-        if (!loaded || !Array.isArray(loaded.sets)) {
-          throw new Error("Invalid rules file. Expected a JSON file with a 'sets' array.");
-        }
-
-        rules = normalizeRules(loaded);
-        setStatus("Rules updated. Loaded " + rules.sets.length + " rule set(s).");
-        debug("Loaded rules", rules);
-      } catch (error) {
-        console.error(error);
-        setStatus("Could not update rules.\n\n" + errorMessage(error));
-      }
+    try {
+      await API.ui.setMenu({ title: "Attribute Checker", command: "attribute_checker_open" });
+      await API.ui.setActiveMenuItem("attribute_checker_open");
+    } catch (uiError) {
+      console.warn("Menu setup failed but extension can continue.", uiError);
     }
 
-    function normalizeRules(input) {
-      const normalized = {
-        version: input.version || 1,
-        sets: (input.sets || []).map(set => ({
-          name: String(set.name || "").trim(),
-          attributes: (set.attributes || []).map(attr => ({
-            name: String(attr.name || "").trim(),
-            path: attr.path || makePath(set.name, attr.name),
-            checkType: attr.checkType || "text",
-            required: attr.required !== false,
-            acceptedValues: Array.isArray(attr.acceptedValues) ? attr.acceptedValues.map(v => String(v)) : [],
-            min: attr.min !== undefined ? String(attr.min) : "",
-            max: attr.max !== undefined ? String(attr.max) : "",
-            note: attr.note || ""
-          })).filter(attr => attr.name || attr.path)
-        })).filter(set => set.name)
-      };
-      return normalized;
+    setStatus("Connected. Press Update rules, then choose a tab and run a scan.");
+    await loadRules();
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not connect to Trimble Connect.\n\n" + errorMessage(error));
+  }
+}
+
+function openTab(name) {
+  document.getElementById("tabValues").classList.toggle("active", name === "values");
+  document.getElementById("tabSets").classList.toggle("active", name === "sets");
+  document.getElementById("tabBtnValues").classList.toggle("active", name === "values");
+  document.getElementById("tabBtnSets").classList.toggle("active", name === "sets");
+}
+
+async function loadRules() {
+  try {
+    const url = new URL("rules.json", window.location.href);
+    url.searchParams.set("v", Date.now().toString());
+
+    const response = await fetch(url.toString(), { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not load rules.json. HTTP " + response.status);
+
+    const loaded = await response.json();
+    if (!loaded || !Array.isArray(loaded.sets)) {
+      throw new Error("Invalid rules file. Expected a JSON file with a 'sets' array.");
     }
 
-    async function runScan() {
-      try {
-        ensureReady();
+    rules = normalizeRules(loaded);
+    renderSetCheckboxes();
+    setStatus("Rules updated. Loaded " + rules.sets.length + " attribute set(s).");
+    debug("Loaded rules", rules);
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not load rules.json.\n\n" + errorMessage(error));
+  }
+}
 
-        if (!rules.sets.length) {
-          setStatus("No rules loaded. Press Update rules first.");
-          return;
-        }
+function normalizeRules(input) {
+  return {
+    version: input.version || 1,
+    sets: (input.sets || []).map(set => ({
+      name: String(set.name || "").trim(),
+      attributes: (set.attributes || []).map(attr => ({
+        name: String(attr.name || "").trim(),
+        path: attr.path || makePath(set.name, attr.name),
+        checkType: attr.checkType || "text",
+        required: attr.required !== false,
+        acceptedValues: Array.isArray(attr.acceptedValues) ? attr.acceptedValues.map(v => String(v)) : [],
+        min: attr.min !== undefined ? String(attr.min) : "",
+        max: attr.max !== undefined ? String(attr.max) : "",
+        note: attr.note || ""
+      })).filter(attr => attr.name || attr.path)
+    })).filter(set => set.name)
+  };
+}
 
-        if (!confirm("This will scan objects loaded in the 3D viewer. It may take time on large models. Continue?")) return;
+function renderSetCheckboxes() {
+  const container = document.getElementById("setCheckboxes");
+  container.innerHTML = "";
 
-        resetReport();
-        setProgress(0);
-        setStatus("Getting loaded models...");
-        await loadModelNames();
+  if (!rules.sets.length) {
+    container.textContent = "No attribute sets found in rules.json.";
+    return;
+  }
 
-        setStatus("Getting objects from loaded viewer models...");
-        const rawObjects = await API.viewer.getObjects();
-        const groups = normalizeObjectGroups(rawObjects);
+  rules.sets.forEach(set => {
+    const label = document.createElement("label");
+    label.className = "check-item";
+    label.innerHTML = `
+      <input type="checkbox" class="required-set-checkbox" value="${escapeHtml(set.name)}">
+      <span>${escapeHtml(set.name)}</span>
+    `;
+    container.appendChild(label);
+  });
+}
 
-        scanData.allGroups = groups;
+function getRequiredSets() {
+  return Array.from(document.querySelectorAll(".required-set-checkbox:checked")).map(cb => cb.value);
+}
 
-        const totalObjects = groups.reduce((sum, g) => sum + g.objectRuntimeIds.length, 0);
-        document.getElementById("sumObjects").textContent = totalObjects;
+function selectAllRequiredSets() {
+  document.querySelectorAll(".required-set-checkbox").forEach(cb => cb.checked = true);
+}
 
-        if (!totalObjects) {
-          setStatus("No objects returned by API.viewer.getObjects(). The diagnostic showed this can work, so check that models are loaded in the 3D viewer.");
-          debug("Raw getObjects result", rawObjects);
-          return;
-        }
+function clearRequiredSets() {
+  document.querySelectorAll(".required-set-checkbox").forEach(cb => cb.checked = false);
+}
 
-        setStatus("Found " + totalObjects + " object(s). Reading properties...");
-        debug("Normalized object groups", groups.map(g => ({ modelId: g.modelId, modelName: modelNameById.get(g.modelId), count: g.objectRuntimeIds.length })));
+async function runValueScan() {
+  try {
+    ensureReady();
+    if (!rules.sets.length) return setStatus("No rules loaded. Press Update rules first.");
+    if (!confirm("This will scan objects loaded in the 3D viewer. Continue?")) return;
 
-        const batchSize = Number(document.getElementById("batchSize").value || 100);
-        const scanMode = document.getElementById("modeSelect").value;
+    clearValueReport();
+    setProgress(0);
+    await loadModelNames();
 
-        let processed = 0;
-        let checked = 0;
-        let passed = 0;
-        let failed = 0;
-        let noKnown = 0;
+    setStatus("Getting objects from loaded viewer models...");
+    const groups = normalizeObjectGroups(await API.viewer.getObjects());
+    valueData.allGroups = groups;
 
-        for (const group of groups) {
-          const ids = group.objectRuntimeIds;
-          for (let i = 0; i < ids.length; i += batchSize) {
-            const batchIds = ids.slice(i, i + batchSize);
+    const totalObjects = countGroupObjects(groups);
+    document.getElementById("vObjects").textContent = totalObjects;
+    if (totalObjects === 0) return setStatus("No objects returned by API.viewer.getObjects().");
 
-            const properties = await getObjectPropertiesRobust(group.modelId, batchIds);
+    const batchSize = Number(document.getElementById("batchSize").value || 100);
+    let processed = 0, checked = 0, passed = 0, failed = 0, noKnown = 0;
 
-            const propertyMap = mapPropertiesToIds(batchIds, properties);
+    for (const group of groups) {
+      for (let i = 0; i < group.objectRuntimeIds.length; i += batchSize) {
+        const batchIds = group.objectRuntimeIds.slice(i, i + batchSize);
+        const properties = await getObjectPropertiesRobust(group.modelId, batchIds);
+        const propertyMap = mapPropertiesToIds(batchIds, properties);
 
-            for (const objectId of batchIds) {
-              const objectProps = propertyMap.get(String(objectId));
-              const flat = objectProps ? flattenProperties(objectProps) : {};
-              const result = checkObject(group.modelId, objectId, flat, scanMode);
+        for (const objectId of batchIds) {
+          const objectProps = propertyMap.get(String(objectId));
+          const flat = objectProps ? flattenProperties(objectProps) : {};
+          const result = checkObjectValues(group.modelId, objectId, flat);
 
-              processed++;
+          processed++;
 
-              if (result.status === "noKnownSet") {
-                noKnown++;
-                scanData.noKnownSetItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
-              } else {
-                checked++;
-
-                if (result.status === "passed") {
-                  passed++;
-                  scanData.passItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
-                } else if (result.status === "failed") {
-                  failed++;
-                  scanData.failItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
-                  addFailureToReport(result);
-                }
-              }
-
-              if (processed % 25 === 0) {
-                updateSummaryCounts(totalObjects, checked, passed, failed, noKnown);
-              }
+          if (result.status === "noKnownSet") {
+            noKnown++;
+            valueData.noKnownSetItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
+          } else {
+            checked++;
+            if (result.status === "passed") {
+              passed++;
+              valueData.passItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
+            } else {
+              failed++;
+              valueData.failItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
+              addValueFailure(group.modelId, objectId, result, flat);
             }
-
-            setProgress(totalObjects ? (processed / totalObjects) * 100 : 0);
-            setStatus("Scanning...\nProcessed " + processed + " of " + totalObjects + " objects.");
-            await pause(10);
           }
+
+          setProgress((processed / totalObjects) * 100);
         }
 
-        updateSummaryCounts(totalObjects, checked, passed, failed, noKnown);
-        renderReport();
-        setProgress(100);
-
-        setStatus(
-          "Scan complete.\n" +
-          "Objects found: " + totalObjects + "\n" +
-          "Objects checked: " + checked + "\n" +
-          "Passed: " + passed + "\n" +
-          "Failed: " + failed + "\n" +
-          "No known rule set: " + noKnown
-        );
-      } catch (error) {
-        console.error(error);
-        setStatus("Scan failed.\n\n" + errorMessage(error));
-        debug("Scan error", { message: errorMessage(error), stack: error.stack });
+        setStatus("Value scan running...\nProcessed " + processed + " of " + totalObjects + " objects.");
+        await pause(10);
       }
     }
 
-    async function loadModelNames() {
-      modelNameById = new Map();
+    updateValueSummary(totalObjects, checked, passed, failed, noKnown);
+    renderValueReport();
+    setProgress(100);
+    setStatus(
+      "Value scan complete.\n" +
+      "Objects found: " + totalObjects + "\n" +
+      "Objects checked: " + checked + "\n" +
+      "Passed: " + passed + "\n" +
+      "Failed: " + failed + "\n" +
+      "Not checked - no matching set: " + noKnown
+    );
+  } catch (error) {
+    console.error(error);
+    setStatus("Value scan failed.\n\n" + errorMessage(error));
+    debug("Value scan error", { message: errorMessage(error), stack: error.stack });
+  }
+}
 
-      try {
-        const models = await API.viewer.getModels();
-        if (Array.isArray(models)) {
-          models.forEach(model => {
-            const id = model.id || model.modelId || model.versionId;
-            if (id) modelNameById.set(String(id), model.name || model.fileName || String(id));
+function checkObjectValues(modelId, objectId, flat) {
+  const detectedSets = detectKnownSets(flat);
+
+  if (detectedSets.length === 0) {
+    return { status: "noKnownSet", detectedSets, problems: [] };
+  }
+
+  const problems = [];
+  for (const setName of detectedSets) {
+    const set = rules.sets.find(s => lower(s.name) === lower(setName));
+    if (!set) continue;
+
+    for (const rule of set.attributes) {
+      const result = evaluateRule(rule, flat);
+      if (result.status === "missing" || result.status === "incorrect") {
+        problems.push({
+          setName: set.name,
+          attributePath: rule.path || makePath(set.name, rule.name),
+          attributeName: rule.name,
+          status: result.status,
+          actualValue: result.actualValue,
+          expected: describeExpected(rule),
+          message: result.message
+        });
+      }
+    }
+  }
+
+  return { status: problems.length ? "failed" : "passed", detectedSets, problems };
+}
+
+function addValueFailure(modelId, objectId, result, flat) {
+  const key = String(modelId);
+  if (!valueData.failuresByModel.has(key)) {
+    valueData.failuresByModel.set(key, { modelId, modelName: modelName(modelId), objects: [] });
+  }
+
+  const identity = objectIdentity(objectId, flat);
+  const objectRecord = {
+    modelId,
+    objectRuntimeId: objectId,
+    identity,
+    detectedSets: result.detectedSets,
+    problems: result.problems
+  };
+
+  valueData.failuresByModel.get(key).objects.push(objectRecord);
+
+  result.problems.forEach(p => {
+    valueData.csvRows.push([
+      modelName(modelId), modelId, objectId, identity.label,
+      p.setName, p.attributePath, p.status, p.actualValue, p.expected, p.message
+    ]);
+  });
+}
+
+function renderValueReport() {
+  const container = document.getElementById("valueReport");
+  container.innerHTML = "";
+
+  if (valueData.failuresByModel.size === 0) {
+    container.textContent = "No failed objects found.";
+    return;
+  }
+
+  for (const [, model] of valueData.failuresByModel) {
+    const problemCount = model.objects.reduce((sum, obj) => sum + obj.problems.length, 0);
+    const details = document.createElement("details");
+    details.className = "model";
+    details.innerHTML = `
+      <summary>${escapeHtml(model.modelName)}
+        <span class="badge red">${model.objects.length} failed object(s)</span>
+        <span class="badge orange">${problemCount} problem attribute(s)</span>
+      </summary>
+      <div class="detail-body"></div>
+    `;
+
+    const body = details.querySelector(".detail-body");
+    model.objects.forEach(obj => body.appendChild(renderValueObject(obj)));
+    container.appendChild(details);
+  }
+}
+
+function renderValueObject(obj) {
+  const details = document.createElement("details");
+  details.className = "object";
+
+  const setPills = obj.detectedSets.map(s => `<span class="pill">${escapeHtml(s)}</span>`).join("");
+  details.innerHTML = `
+    <summary>Object ${escapeHtml(obj.identity.label)}
+      <span class="badge red">${obj.problems.length} problem(s)</span>
+      ${setPills}
+    </summary>
+    <div class="detail-body">
+      <div class="buttons" style="justify-content:flex-end;">
+        <button class="secondary small" onclick="selectOneObject('${escapeJs(obj.modelId)}', ${Number(obj.objectRuntimeId)})">Select</button>
+      </div>
+      <div class="small-text">${escapeHtml(obj.identity.description)}</div>
+      <table>
+        <thead><tr><th>Set</th><th>Attribute</th><th>Status</th><th>Actual value</th><th>Expected</th><th>Message</th></tr></thead>
+        <tbody>
+          ${obj.problems.map(p => `
+            <tr>
+              <td>${escapeHtml(p.setName)}</td>
+              <td>${escapeHtml(p.attributePath)}</td>
+              <td class="problem">${escapeHtml(p.status)}</td>
+              <td>${escapeHtml(p.actualValue || "-")}</td>
+              <td>${escapeHtml(p.expected)}</td>
+              <td>${escapeHtml(p.message)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  return details;
+}
+
+async function runSetScan() {
+  try {
+    ensureReady();
+    if (!rules.sets.length) return setStatus("No rules loaded. Press Update rules first.");
+    if (!confirm("This will scan attribute set coverage for objects loaded in the 3D viewer. Continue?")) return;
+
+    clearSetReport();
+    setProgress(0);
+    await loadModelNames();
+
+    const requiredSets = getRequiredSets();
+    setStatus("Getting objects from loaded viewer models...");
+    const groups = normalizeObjectGroups(await API.viewer.getObjects());
+    setData.allGroups = groups;
+
+    const totalObjects = countGroupObjects(groups);
+    document.getElementById("sObjects").textContent = totalObjects;
+    if (totalObjects === 0) return setStatus("No objects returned by API.viewer.getObjects().");
+
+    const batchSize = Number(document.getElementById("batchSize").value || 100);
+    let processed = 0, hasAllRequired = 0, missingRequired = 0, onlyRequired = 0, noKnown = 0;
+
+    for (const group of groups) {
+      const modelKey = String(group.modelId);
+      const modelRecord = ensureSetModelRecord(group.modelId);
+
+      for (let i = 0; i < group.objectRuntimeIds.length; i += batchSize) {
+        const batchIds = group.objectRuntimeIds.slice(i, i + batchSize);
+        const properties = await getObjectPropertiesRobust(group.modelId, batchIds);
+        const propertyMap = mapPropertiesToIds(batchIds, properties);
+
+        for (const objectId of batchIds) {
+          const objectProps = propertyMap.get(String(objectId));
+          const flat = objectProps ? flattenProperties(objectProps) : {};
+          const detectedSets = detectKnownSets(flat);
+          const detectedLower = new Set(detectedSets.map(lower));
+          const missingSets = requiredSets.filter(s => !detectedLower.has(lower(s)));
+          const extraSets = detectedSets.filter(s => !requiredSets.map(lower).includes(lower(s)));
+          const identity = objectIdentity(objectId, flat);
+
+          processed++;
+          modelRecord.objectsChecked++;
+
+          detectedSets.forEach(setName => {
+            modelRecord.setCounts.set(setName, (modelRecord.setCounts.get(setName) || 0) + 1);
           });
-        }
-      } catch (error) {
-        console.warn("Could not load model names.", error);
-      }
-    }
 
-    function normalizeObjectGroups(value) {
-      if (!value) return [];
-
-      const groups = [];
-
-      function addGroup(modelId, ids) {
-        if (!modelId || !Array.isArray(ids)) return;
-        const cleanIds = ids
-          .map(item => {
-            if (item && typeof item === "object") return item.id ?? item.objectRuntimeId ?? item.runtimeId;
-            return item;
-          })
-          .filter(id => id !== undefined && id !== null);
-        if (cleanIds.length) {
-          groups.push({ modelId: String(modelId), objectRuntimeIds: cleanIds });
-        }
-      }
-
-      if (Array.isArray(value)) {
-        value.forEach(item => {
-          if (!item) return;
-
-          if (item.modelId && Array.isArray(item.objects)) {
-            addGroup(item.modelId, item.objects);
-          } else if (item.modelId && Array.isArray(item.objectRuntimeIds)) {
-            addGroup(item.modelId, item.objectRuntimeIds);
-          } else if (item.modelId && Array.isArray(item.ids)) {
-            addGroup(item.modelId, item.ids);
-          } else if (item.modelObjectIds) {
-            normalizeObjectGroups(item).forEach(g => groups.push(g));
+          if (detectedSets.length === 0) {
+            noKnown++;
+            modelRecord.noKnownObjects.push({ modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets });
           }
-        });
-      } else if (Array.isArray(value.modelObjectIds)) {
-        value.modelObjectIds.forEach(item => {
-          addGroup(item.modelId, item.objectRuntimeIds || item.ids || item.objects || []);
-        });
-      } else if (value.modelId) {
-        addGroup(value.modelId, value.objectRuntimeIds || value.ids || value.objects || []);
-      }
 
-      return mergeGroups(groups);
-    }
+          if (requiredSets.length > 0 && missingSets.length > 0) {
+            missingRequired++;
+            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets, missingSets };
+            setData.missingItems.push(item);
+            modelRecord.missingObjects.push(item);
 
-    function mergeGroups(groups) {
-      const map = new Map();
-      groups.forEach(group => {
-        if (!map.has(group.modelId)) map.set(group.modelId, new Set());
-        group.objectRuntimeIds.forEach(id => map.get(group.modelId).add(id));
-      });
-      return Array.from(map.entries()).map(([modelId, idSet]) => ({
-        modelId,
-        objectRuntimeIds: Array.from(idSet)
-      }));
-    }
-
-    async function getObjectPropertiesRobust(modelId, ids) {
-      const attempts = [
-        () => API.viewer.getObjectProperties(modelId, ids),
-        () => API.viewer.getObjectProperties({ modelId, objectRuntimeIds: ids }),
-        () => API.viewer.getObjectProperties({ modelObjectIds: [{ modelId, objectRuntimeIds: ids }] })
-      ];
-
-      let lastError = null;
-
-      for (const attempt of attempts) {
-        try {
-          const result = await attempt();
-          if (Array.isArray(result)) return result;
-          if (result && Array.isArray(result.properties)) return result.properties;
-          if (result && Array.isArray(result.objects)) return result.objects;
-          return [];
-        } catch (error) {
-          lastError = error;
-        }
-      }
-
-      throw lastError || new Error("Could not get object properties.");
-    }
-
-    function mapPropertiesToIds(requestedIds, properties) {
-      const map = new Map();
-
-      if (Array.isArray(properties)) {
-        properties.forEach((props, index) => {
-          const id = props?.id ?? props?.objectRuntimeId ?? props?.runtimeId ?? requestedIds[index];
-          map.set(String(id), props);
-        });
-      }
-
-      requestedIds.forEach(id => {
-        if (!map.has(String(id))) map.set(String(id), null);
-      });
-
-      return map;
-    }
-
-    function checkObject(modelId, objectId, flat, scanMode) {
-      const detectedSets = scanMode === "allSets"
-        ? rules.sets.map(set => set.name)
-        : detectSets(flat);
-
-      const objectIdentity = getObjectIdentity(flat, objectId);
-      const modelName = modelNameById.get(modelId) || modelId;
-
-      if (!detectedSets.length) {
-        return {
-          status: "noKnownSet",
-          modelId,
-          modelName,
-          objectRuntimeId: objectId,
-          objectIdentity,
-          detectedSets: [],
-          problems: []
-        };
-      }
-
-      const problems = [];
-      const checkedRules = [];
-
-      detectedSets.forEach(setName => {
-        const ruleSet = rules.sets.find(set => normalize(set.name) === normalize(setName));
-        if (!ruleSet) return;
-
-        (ruleSet.attributes || []).forEach(rule => {
-          const result = evaluateRule(rule, flat);
-          checkedRules.push({ setName, rule, result });
-
-          if (result.status === "missing" || result.status === "incorrect") {
-            problems.push({
-              setName,
-              attributeName: rule.name || lastPathPart(rule.path),
-              attributePath: rule.path || makePath(setName, rule.name),
-              status: result.status,
-              actualValue: result.actualValue,
-              expected: describeExpected(rule),
-              message: result.message
-            });
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "missing_required_sets", missingSets.join(" | "), detectedSets.join(" | ")
+            ]);
+          } else {
+            if (requiredSets.length > 0) hasAllRequired++;
           }
-        });
-      });
 
-      return {
-        status: problems.length ? "failed" : "passed",
-        modelId,
-        modelName,
-        objectRuntimeId: objectId,
-        objectIdentity,
-        detectedSets,
-        problemCount: problems.length,
-        problems
-      };
-    }
+          if (requiredSets.length > 0 && missingSets.length === 0 && extraSets.length === 0) {
+            onlyRequired++;
+            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets };
+            setData.onlyRequiredItems.push(item);
+            modelRecord.onlyRequiredObjects.push(item);
 
-    function detectSets(flat) {
-      const keys = Object.keys(flat);
-      const found = [];
-
-      for (const set of rules.sets) {
-        const setNorm = normalize(set.name);
-        const hasSet = keys.some(key => {
-          const keyNorm = normalize(key);
-          return keyNorm === setNorm || keyNorm.startsWith(setNorm + ".") || keyNorm.includes("." + setNorm + ".");
-        });
-
-        if (hasSet) found.push(set.name);
-      }
-
-      return found;
-    }
-
-    function evaluateRule(rule, flat) {
-      const lookup = getPropertyValue(flat, rule.path, rule.name);
-      const required = rule.required !== false;
-
-      if (!lookup.exists || isBlank(lookup.value)) {
-        if (required) {
-          return { status: "missing", actualValue: "", message: "Required attribute is missing or empty." };
-        }
-        return { status: "correct", actualValue: "", message: "Optional attribute is empty." };
-      }
-
-      const textValue = String(lookup.value).trim();
-      const checkType = rule.checkType || "text";
-
-      if (checkType === "text") {
-        return { status: "correct", actualValue: textValue, message: "Any text accepted." };
-      }
-
-      if (checkType === "number") {
-        return isFiniteNumber(textValue)
-          ? { status: "correct", actualValue: textValue, message: "Any number accepted." }
-          : { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
-      }
-
-      if (checkType === "list") {
-        const allowed = (rule.acceptedValues || []).map(v => String(v).trim().toLowerCase());
-        return allowed.includes(textValue.toLowerCase())
-          ? { status: "correct", actualValue: textValue, message: "Value is accepted." }
-          : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted text list." };
-      }
-
-      if (checkType === "numberList") {
-        if (!isFiniteNumber(textValue)) {
-          return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
-        }
-
-        const numberValue = Number(normalizeNumberText(textValue));
-        const allowedNumbers = (rule.acceptedValues || [])
-          .filter(v => isFiniteNumber(v))
-          .map(v => Number(normalizeNumberText(v)));
-
-        return allowedNumbers.includes(numberValue)
-          ? { status: "correct", actualValue: textValue, message: "Value is accepted." }
-          : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted number list." };
-      }
-
-      if (checkType === "numberRange") {
-        if (!isFiniteNumber(textValue)) {
-          return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
-        }
-
-        const numberValue = Number(normalizeNumberText(textValue));
-        const min = isBlank(rule.min) ? -Infinity : Number(normalizeNumberText(rule.min));
-        const max = isBlank(rule.max) ? Infinity : Number(normalizeNumberText(rule.max));
-
-        return numberValue >= min && numberValue <= max
-          ? { status: "correct", actualValue: textValue, message: "Number is inside range." }
-          : { status: "incorrect", actualValue: textValue, message: "Number is outside range." };
-      }
-
-      if (checkType === "yesNo") {
-        const allowed = ["yes", "no", "true", "false", "1", "0"];
-        return allowed.includes(textValue.toLowerCase())
-          ? { status: "correct", actualValue: textValue, message: "Yes/no value accepted." }
-          : { status: "incorrect", actualValue: textValue, message: "Expected yes/no, true/false, or 1/0." };
-      }
-
-      if (checkType === "date") {
-        return Number.isNaN(Date.parse(textValue))
-          ? { status: "incorrect", actualValue: textValue, message: "Value does not look like a date." }
-          : { status: "correct", actualValue: textValue, message: "Date-like value accepted." };
-      }
-
-      return { status: "correct", actualValue: textValue, message: "Unknown check type treated as pass." };
-    }
-
-    function getPropertyValue(flat, fullPath, fallbackName) {
-      const keys = Object.keys(flat);
-      const fullNorm = normalize(fullPath);
-      const fallbackNorm = normalize(fallbackName);
-
-      for (const key of keys) {
-        if (normalize(key) === fullNorm) return { exists: true, value: flat[key], matchedPath: key };
-      }
-
-      for (const key of keys) {
-        const keyNorm = normalize(key);
-        if (keyNorm.endsWith("." + fullNorm) || keyNorm.includes("." + fullNorm + ".")) {
-          return { exists: true, value: flat[key], matchedPath: key };
-        }
-      }
-
-      if (fallbackName) {
-        for (const key of keys) {
-          const parts = normalize(key).split(".");
-          if (parts[parts.length - 1] === fallbackNorm) {
-            return { exists: true, value: flat[key], matchedPath: key };
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "only_required_sets", requiredSets.join(" | "), detectedSets.join(" | ")
+            ]);
           }
-        }
-      }
 
-      return { exists: false, value: "", matchedPath: "" };
-    }
-
-    function flattenProperties(object) {
-      const output = {};
-
-      function add(path, value) {
-        if (!path) return;
-        if (value === undefined || value === null) return;
-        if (typeof value === "object") return;
-        output[path] = String(value);
-      }
-
-      function walk(node, prefix) {
-        if (node === null || node === undefined) return;
-
-        if (Array.isArray(node)) {
-          node.forEach(item => walk(item, prefix));
-          return;
+          setProgress((processed / totalObjects) * 100);
         }
 
-        if (typeof node !== "object") {
-          add(prefix, node);
-          return;
-        }
-
-        const possibleName = node.name || node.Name || node.key || node.Key || node.displayName || node.label;
-        const possibleValue = node.value ?? node.Value ?? node.val ?? node.text ?? node.Text;
-        const currentPath = possibleName ? (prefix ? prefix + "." + possibleName : String(possibleName)) : prefix;
-
-        if (possibleName && possibleValue !== undefined && possibleValue !== null && typeof possibleValue !== "object") {
-          add(currentPath, possibleValue);
-        }
-
-        const childCollections = [
-          node.properties, node.Properties,
-          node.children, node.Children,
-          node.items, node.Items,
-          node.propertySets, node.PropertySets,
-          node.parameters, node.Parameters
-        ];
-
-        childCollections.forEach(children => { if (children) walk(children, currentPath); });
-
-        Object.keys(node).forEach(key => {
-          if ([
-            "name","Name","key","Key","displayName","label",
-            "value","Value","val","text","Text",
-            "properties","Properties","children","Children",
-            "items","Items","propertySets","PropertySets",
-            "parameters","Parameters"
-          ].includes(key)) return;
-
-          const value = node[key];
-          if (value === undefined || value === null) return;
-
-          const newPath = prefix ? prefix + "." + key : key;
-          if (typeof value === "object") walk(value, newPath);
-          else add(newPath, value);
-        });
+        setStatus("Attribute set scan running...\nProcessed " + processed + " of " + totalObjects + " objects.");
+        await pause(10);
       }
-
-      walk(object, "");
-      return output;
     }
 
-    function addFailureToReport(result) {
-      const modelId = result.modelId;
-
-      if (!scanData.failuresByModel.has(modelId)) {
-        scanData.failuresByModel.set(modelId, {
-          modelId,
-          modelName: result.modelName,
-          objects: []
-        });
-      }
-
-      scanData.failuresByModel.get(modelId).objects.push(result);
-
-      result.problems.forEach(problem => {
-        scanData.csvRows.push({
-          modelName: result.modelName,
-          modelId: result.modelId,
-          objectRuntimeId: result.objectRuntimeId,
-          objectIdentity: result.objectIdentity.label,
-          detectedSets: result.detectedSets.join(" | "),
-          setName: problem.setName,
-          attributePath: problem.attributePath,
-          actualValue: problem.actualValue,
-          expected: problem.expected,
-          status: problem.status,
-          message: problem.message
-        });
-      });
+    if (requiredSets.length === 0) {
+      hasAllRequired = 0;
+      missingRequired = 0;
+      onlyRequired = 0;
     }
 
-    function renderReport() {
-      const container = document.getElementById("report");
-      container.innerHTML = "";
+    updateSetSummary(totalObjects, hasAllRequired, missingRequired, onlyRequired, noKnown);
+    renderSetReport(requiredSets);
+    setProgress(100);
 
-      if (scanData.failuresByModel.size === 0) {
-        container.innerHTML = '<div class="status">No failed objects found.</div>';
-        return;
-      }
+    setStatus(
+      "Attribute set scan complete.\n" +
+      "Required sets selected: " + (requiredSets.length ? requiredSets.join(", ") : "none - inventory mode") + "\n" +
+      "Objects found: " + totalObjects + "\n" +
+      "Missing required sets: " + missingRequired + "\n" +
+      "Objects with only required sets: " + onlyRequired + "\n" +
+      "Objects with no known set: " + noKnown
+    );
+  } catch (error) {
+    console.error(error);
+    setStatus("Attribute set scan failed.\n\n" + errorMessage(error));
+    debug("Set scan error", { message: errorMessage(error), stack: error.stack });
+  }
+}
 
-      const models = Array.from(scanData.failuresByModel.values())
-        .sort((a, b) => a.modelName.localeCompare(b.modelName));
+function ensureSetModelRecord(modelId) {
+  const key = String(modelId);
+  if (!setData.reportByModel.has(key)) {
+    setData.reportByModel.set(key, {
+      modelId,
+      modelName: modelName(modelId),
+      objectsChecked: 0,
+      setCounts: new Map(),
+      missingObjects: [],
+      onlyRequiredObjects: [],
+      noKnownObjects: []
+    });
+  }
+  return setData.reportByModel.get(key);
+}
 
-      models.forEach(model => {
-        const problemCount = model.objects.reduce((sum, obj) => sum + obj.problems.length, 0);
+function renderSetReport(requiredSets) {
+  const container = document.getElementById("setReport");
+  container.innerHTML = "";
 
-        const details = document.createElement("details");
-        details.className = "model-details";
-        details.innerHTML = `
-          <summary>
-            ${escapeHtml(model.modelName)}
-            <span class="pill bad">${model.objects.length} failed object(s)</span>
-            <span class="pill warn">${problemCount} problem attribute(s)</span>
-          </summary>
-          <div id="model-${safeId(model.modelId)}" class="model-object-list"></div>
-        `;
+  if (setData.reportByModel.size === 0) {
+    container.textContent = "No attribute set scan results.";
+    return;
+  }
 
-        details.addEventListener("toggle", () => {
-          if (details.open) renderModelObjects(model);
-        });
+  for (const [, model] of setData.reportByModel) {
+    const details = document.createElement("details");
+    details.className = "model";
 
-        container.appendChild(details);
-      });
-    }
+    const setCountRows = Array.from(model.setCounts.entries())
+      .sort((a,b) => a[0].localeCompare(b[0]))
+      .map(([setName, count]) => `<tr><td>${escapeHtml(setName)}</td><td>${count}</td></tr>`)
+      .join("");
 
-    function renderModelObjects(model) {
-      const target = document.getElementById("model-" + safeId(model.modelId));
-      if (!target || target.dataset.rendered === "true") return;
+    const missingText = requiredSets.length ? `${model.missingObjects.length} missing required` : "inventory mode";
+    const onlyRequiredBlock = requiredSets.length
+      ? renderObjectList("Objects with only required sets", model.onlyRequiredObjects, "blue")
+      : `<div class="hint">No required sets were selected, so "only required sets" is not shown.</div>`;
 
-      const maxInitial = 500;
-      const objects = model.objects.slice(0, maxInitial);
+    details.innerHTML = `
+      <summary>${escapeHtml(model.modelName)}
+        <span class="badge blue">${model.objectsChecked} object(s)</span>
+        <span class="badge red">${escapeHtml(missingText)}</span>
+        ${requiredSets.length ? `<span class="badge orange">${model.onlyRequiredObjects.length} only required set(s)</span>` : ""}
+        <span class="badge orange">${model.noKnownObjects.length} no known set</span>
+      </summary>
+      <div class="detail-body">
+        <h4>Detected set counts</h4>
+        <table>
+          <thead><tr><th>Attribute set</th><th>Objects with this set</th></tr></thead>
+          <tbody>${setCountRows || `<tr><td colspan="2">No known sets detected.</td></tr>`}</tbody>
+        </table>
+        ${requiredSets.length ? renderMissingList(model.missingObjects) : ""}
+        ${onlyRequiredBlock}
+        ${renderObjectList("Objects with no known set", model.noKnownObjects, "orange")}
+      </div>
+    `;
+    container.appendChild(details);
+  }
+}
 
-      objects.forEach(obj => {
-        const wrapper = document.createElement("details");
-        wrapper.className = "object-details";
+function renderMissingList(items) {
+  if (!items.length) return `<h4>Objects missing required sets</h4><div class="hint">None.</div>`;
 
-        wrapper.innerHTML = `
-          <summary>
-            Object ${escapeHtml(obj.objectIdentity.label)}
-            <span class="pill bad">${obj.problems.length} problem(s)</span>
-            <span class="pill muted">${escapeHtml(obj.detectedSets.join(", "))}</span>
-          </summary>
-          <div class="object-head">
-            <div>
-              <div class="object-title">Runtime ID: ${escapeHtml(obj.objectRuntimeId)}</div>
-              <div class="object-meta">${escapeHtml(obj.objectIdentity.detail)}</div>
-            </div>
-            <button class="small-btn secondary" onclick="selectOneObject(\'${escapeJs(String(model.modelId))}\', \'${escapeJs(String(obj.objectRuntimeId))}\')">Select</button>
-          </div>
-          <table>
-            <thead>
+  return `
+    <h4>Objects missing required sets</h4>
+    <table>
+      <thead><tr><th>Object</th><th>Missing sets</th><th>Detected sets</th><th>Action</th></tr></thead>
+      <tbody>
+        ${items.map(item => `
+          <tr>
+            <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
+            <td class="problem">${escapeHtml(item.missingSets.join(", "))}</td>
+            <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
+            <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderObjectList(title, items, badgeColor) {
+  if (!items.length) return `<h4>${escapeHtml(title)}</h4><div class="hint">None.</div>`;
+
+  return `
+    <details class="object">
+      <summary>${escapeHtml(title)} <span class="badge ${badgeColor}">${items.length}</span></summary>
+      <div class="detail-body">
+        <table>
+          <thead><tr><th>Object</th><th>Detected sets</th><th>Action</th></tr></thead>
+          <tbody>
+            ${items.slice(0, 500).map(item => `
               <tr>
-                <th>Set</th>
-                <th>Attribute</th>
-                <th>Status</th>
-                <th>Actual value</th>
-                <th>Expected</th>
-                <th>Message</th>
+                <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
+                <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
+                <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
               </tr>
-            </thead>
-            <tbody>
-              ${obj.problems.map(p => `
-                <tr>
-                  <td>${escapeHtml(p.setName)}</td>
-                  <td>${escapeHtml(p.attributePath)}</td>
-                  <td class="${p.status === 'missing' ? 'missing' : 'problem'}">${escapeHtml(p.status)}</td>
-                  <td class="${p.status === 'missing' ? 'missing' : 'problem'}">${escapeHtml(p.actualValue || "-")}</td>
-                  <td>${escapeHtml(p.expected)}</td>
-                  <td>${escapeHtml(p.message)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        `;
+            `).join("")}
+          </tbody>
+        </table>
+        ${items.length > 500 ? `<div class="hint">Showing first 500 objects. Use CSV export for the full list.</div>` : ""}
+      </div>
+    </details>
+  `;
+}
 
-        target.appendChild(wrapper);
+function detectKnownSets(flat) {
+  const keys = Object.keys(flat);
+  const detected = [];
+
+  for (const set of rules.sets) {
+    const prefix = lower(set.name) + ".";
+    const found = keys.some(key => lower(key).includes(prefix));
+    if (found) detected.push(set.name);
+  }
+
+  return detected;
+}
+
+function evaluateRule(rule, flat) {
+  const lookup = getPropertyValue(flat, rule.path, rule.name);
+
+  if (!lookup.exists || isBlank(lookup.value)) {
+    if (rule.required !== false) {
+      return { status: "missing", actualValue: "", message: "Required attribute is missing or empty." };
+    }
+    return { status: "correct", actualValue: "", message: "Optional attribute is empty." };
+  }
+
+  const textValue = String(lookup.value).trim();
+  const checkType = rule.checkType || "text";
+
+  if (checkType === "text") return { status: "correct", actualValue: textValue, message: "Text value exists." };
+
+  if (checkType === "number") {
+    return isFiniteNumber(textValue)
+      ? { status: "correct", actualValue: textValue, message: "Number value exists." }
+      : { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+  }
+
+  if (checkType === "list") {
+    const allowed = (rule.acceptedValues || []).map(v => String(v).trim().toLowerCase());
+    return allowed.includes(textValue.toLowerCase())
+      ? { status: "correct", actualValue: textValue, message: "Value is in accepted text list." }
+      : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted text list." };
+  }
+
+  if (checkType === "numberList") {
+    if (!isFiniteNumber(textValue)) return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+
+    const numberValue = Number(String(textValue).replace(",", "."));
+    const allowedNumbers = (rule.acceptedValues || [])
+      .filter(v => isFiniteNumber(v))
+      .map(v => Number(String(v).replace(",", ".")));
+
+    return allowedNumbers.includes(numberValue)
+      ? { status: "correct", actualValue: textValue, message: "Value is in accepted number list." }
+      : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted number list." };
+  }
+
+  if (checkType === "numberRange") {
+    if (!isFiniteNumber(textValue)) return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+
+    const n = Number(String(textValue).replace(",", "."));
+    const min = rule.min === "" || rule.min === undefined ? -Infinity : Number(String(rule.min).replace(",", "."));
+    const max = rule.max === "" || rule.max === undefined ? Infinity : Number(String(rule.max).replace(",", "."));
+
+    return n >= min && n <= max
+      ? { status: "correct", actualValue: textValue, message: "Number is inside range." }
+      : { status: "incorrect", actualValue: textValue, message: "Number is outside range." };
+  }
+
+  if (checkType === "yesNo") {
+    const allowed = ["yes", "no", "true", "false", "1", "0"];
+    return allowed.includes(textValue.toLowerCase())
+      ? { status: "correct", actualValue: textValue, message: "Yes/no value accepted." }
+      : { status: "incorrect", actualValue: textValue, message: "Expected yes/no, true/false, or 1/0." };
+  }
+
+  if (checkType === "date") {
+    return Number.isNaN(Date.parse(textValue))
+      ? { status: "incorrect", actualValue: textValue, message: "Value does not look like a date." }
+      : { status: "correct", actualValue: textValue, message: "Date-like value exists." };
+  }
+
+  return { status: "correct", actualValue: textValue, message: "No specific check type matched." };
+}
+
+async function loadModelNames() {
+  modelNameById = new Map();
+
+  try {
+    const models = await API.viewer.getModels();
+    if (Array.isArray(models)) {
+      models.forEach(model => {
+        const id = model.id || model.modelId || model.versionId;
+        if (id) modelNameById.set(String(id), model.name || model.fileName || String(id));
       });
-
-      if (model.objects.length > maxInitial) {
-        const note = document.createElement("div");
-        note.className = "status";
-        note.textContent = "Showing first " + maxInitial + " failed objects for this model. Export CSV to see all.";
-        target.appendChild(note);
-      }
-
-      target.dataset.rendered = "true";
     }
+  } catch (error) {
+    console.warn("Could not load model names.", error);
+  }
+}
 
-    async function showOnlyFailed() {
-      try {
-        ensureReady();
+function normalizeObjectGroups(raw) {
+  if (!raw) return [];
+  const groups = [];
 
-        if (!scanData.failItems.length) {
-          setStatus("No failed objects available. Run a scan first.");
-          return;
-        }
+  if (Array.isArray(raw)) {
+    raw.forEach(item => {
+      if (!item) return;
+      const modelId = item.modelId || item.id || item.model;
+      let ids = [];
 
-        const failedCount = scanData.failItems.length;
-        if (!confirm("This will isolate " + failedCount + " failed object(s) and hide the others. Continue?")) return;
+      if (Array.isArray(item.objectRuntimeIds)) ids = item.objectRuntimeIds;
+      else if (Array.isArray(item.objects)) ids = item.objects.map(o => typeof o === "number" ? o : o.id).filter(id => id !== undefined && id !== null);
+      else if (Array.isArray(item.ids)) ids = item.ids;
 
-        await isolateItems(scanData.failItems);
+      ids = ids.map(id => Number(id)).filter(id => Number.isFinite(id));
 
-        setStatus("Showing only failed objects using runtime object IDs. Failed objects isolated: " + failedCount + ".");
-      } catch (error) {
-        console.error(error);
-        setStatus("Could not isolate failed objects.\n\n" + errorMessage(error));
+      if (modelId && ids.length) {
+        groups.push({ modelId: String(modelId), objectRuntimeIds: ids });
       }
-    }
+    });
+  } else if (Array.isArray(raw.modelObjectIds)) {
+    raw.modelObjectIds.forEach(item => {
+      const modelId = item.modelId || item.id || item.model;
+      const ids = (item.objectRuntimeIds || item.ids || []).map(Number).filter(Number.isFinite);
+      if (modelId && ids.length) groups.push({ modelId: String(modelId), objectRuntimeIds: ids });
+    });
+  }
 
-    async function showAllObjects() {
-      try {
-        ensureReady();
-        await API.viewer.setObjectState(undefined, { visible: true });
-        setStatus("All loaded viewer objects set to visible again.");
-      } catch (error) {
-        console.error(error);
-        setStatus("Could not show all objects.\n\n" + errorMessage(error));
-      }
-    }
+  return groups;
+}
 
-    function makeRuntimeSelector(modelId, ids) {
-      const cleanIds = (ids || [])
-        .map(id => {
-          if (typeof id === "number") return id;
-          const parsed = Number(id);
-          return Number.isFinite(parsed) ? parsed : null;
-        })
-        .filter(id => id !== null && id !== undefined);
-
-      if (!modelId || !cleanIds.length) return null;
-
-      return {
-        modelObjectIds: [
-          {
-            modelId: String(modelId),
-            objectRuntimeIds: cleanIds,
-            recursive: false
-          }
-        ]
-      };
-    }
-
-    async function setVisibility(items, visible) {
-      const groups = groupItemsByModel(items);
-
-      for (const group of groups) {
-        const selector = makeRuntimeSelector(group.modelId, group.objectRuntimeIds);
-        if (!selector) continue;
-
-        await API.viewer.setObjectState(selector, { visible });
-        await pause(5);
-      }
-    }
-
-    async function isolateItems(items) {
-      const groups = groupItemsByModel(items)
-        .map(group => ({
-          modelId: String(group.modelId),
-          entityIds: group.objectRuntimeIds
-            .map(id => Number(id))
-            .filter(id => Number.isFinite(id))
-        }))
-        .filter(group => group.entityIds.length);
-
-      if (!groups.length) {
-        throw new Error("No valid failed object runtime IDs available to isolate.");
-      }
-
-      if (API.viewer.isolateEntities) {
-        await API.viewer.isolateEntities(groups);
-        return;
-      }
-
-      // Fallback if isolateEntities is not available.
-      await API.viewer.setObjectState(undefined, { visible: false });
-      for (const group of groups) {
-        const selector = makeRuntimeSelector(group.modelId, group.entityIds);
-        if (selector) {
-          await API.viewer.setObjectState(selector, { visible: true });
-          await pause(5);
-        }
-      }
-    }
-
-    async function selectOneObject(modelId, objectId) {
-      try {
-        ensureReady();
-
-        const selector = makeRuntimeSelector(modelId, [objectId]);
-        if (!selector) {
-          throw new Error("Invalid object reference: modelId=" + modelId + ", objectId=" + objectId);
-        }
-
-        await API.viewer.setSelection(selector, "set");
-
-        // Fit camera to the selected runtime object when supported.
-        try {
-          await API.viewer.setCamera(selector, { animationTime: 500 });
-        } catch (cameraError) {
-          console.warn("Camera fit failed, but selection may still have worked.", cameraError);
-        }
-
-        setStatus("Selected object runtime ID " + objectId + " in model " + modelId + ".");
-      } catch (error) {
-        console.error(error);
-        setStatus("Could not select object.\n\n" + errorMessage(error));
-      }
-    }
-
-    function groupItemsByModel(items) {
-      const map = new Map();
-      items.forEach(item => {
-        if (!map.has(item.modelId)) map.set(item.modelId, new Set());
-        map.get(item.modelId).add(item.objectRuntimeId);
+async function getObjectPropertiesRobust(modelId, ids) {
+  try {
+    return await API.viewer.getObjectProperties(modelId, ids);
+  } catch (firstError) {
+    try {
+      return await API.viewer.getObjectProperties({ modelId, objectRuntimeIds: ids });
+    } catch (secondError) {
+      debug("getObjectProperties failed", {
+        modelId, idsPreview: ids.slice(0, 10),
+        firstError: errorMessage(firstError),
+        secondError: errorMessage(secondError)
       });
-      return Array.from(map.entries()).map(([modelId, ids]) => ({
-        modelId,
-        objectRuntimeIds: Array.from(ids)
-      }));
+      throw secondError;
+    }
+  }
+}
+
+function mapPropertiesToIds(batchIds, properties) {
+  const map = new Map();
+  if (!Array.isArray(properties)) return map;
+
+  properties.forEach((props, index) => {
+    const possibleId = props && (props.id ?? props.objectRuntimeId ?? props.runtimeId);
+    const id = possibleId !== undefined && possibleId !== null ? possibleId : batchIds[index];
+    map.set(String(id), props);
+  });
+
+  return map;
+}
+
+function flattenProperties(object) {
+  const output = {};
+
+  function add(path, value) {
+    if (!path) return;
+    if (value === undefined || value === null) return;
+    if (typeof value === "object") return;
+    output[path] = String(value);
+  }
+
+  function walk(node, prefix) {
+    if (node === null || node === undefined) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(item => walk(item, prefix));
+      return;
     }
 
-    function exportReportCsv() {
-      if (!scanData.csvRows.length) {
-        setStatus("No failed attribute rows to export.");
-        return;
-      }
-
-      const rows = [
-        ["ModelName", "ModelId", "ObjectRuntimeId", "ObjectIdentity", "DetectedSets", "SetName", "AttributePath", "Status", "ActualValue", "Expected", "Message"]
-      ];
-
-      scanData.csvRows.forEach(r => {
-        rows.push([
-          r.modelName, r.modelId, r.objectRuntimeId, r.objectIdentity, r.detectedSets,
-          r.setName, r.attributePath, r.status, r.actualValue, r.expected, r.message
-        ]);
-      });
-
-      const csv = rows.map(row => row.map(csvEscape).join(",")).join("\n");
-      downloadFile("attribute-checker-problem-report.csv", csv, "text/csv");
+    if (typeof node !== "object") {
+      add(prefix, node);
+      return;
     }
 
-    function resetReport() {
-      scanData = {
-        allGroups: [],
-        passItems: [],
-        failItems: [],
-        noKnownSetItems: [],
-        failuresByModel: new Map(),
-        csvRows: []
-      };
+    const possibleName = node.name || node.Name || node.key || node.Key || node.displayName || node.label;
+    const possibleValue = node.value ?? node.Value ?? node.val ?? node.text ?? node.Text;
+    const currentPath = possibleName ? (prefix ? prefix + "." + possibleName : String(possibleName)) : prefix;
 
-      document.getElementById("report").innerHTML = "";
-      updateSummaryCounts(0, 0, 0, 0, 0);
-      setProgress(0);
+    if (possibleName && possibleValue !== undefined && possibleValue !== null && typeof possibleValue !== "object") {
+      add(currentPath, possibleValue);
     }
 
-    function updateSummaryCounts(total, checked, passed, failed, noKnown) {
-      document.getElementById("sumObjects").textContent = total;
-      document.getElementById("sumChecked").textContent = checked;
-      document.getElementById("sumPassed").textContent = passed;
-      document.getElementById("sumFailed").textContent = failed;
-      document.getElementById("sumNoSet").textContent = noKnown;
+    const childCollections = [
+      node.properties, node.Properties, node.children, node.Children, node.items, node.Items,
+      node.propertySets, node.PropertySets, node.parameters, node.Parameters
+    ];
+
+    childCollections.forEach(children => {
+      if (children) walk(children, currentPath);
+    });
+
+    Object.keys(node).forEach(key => {
+      if ([
+        "name", "Name", "key", "Key", "displayName", "label", "value", "Value", "val", "text", "Text",
+        "properties", "Properties", "children", "Children", "items", "Items",
+        "propertySets", "PropertySets", "parameters", "Parameters"
+      ].includes(key)) return;
+
+      const value = node[key];
+      if (value === undefined || value === null) return;
+
+      const newPath = prefix ? prefix + "." + key : key;
+      if (typeof value === "object") walk(value, newPath);
+      else add(newPath, value);
+    });
+  }
+
+  walk(object, "");
+  return output;
+}
+
+function getPropertyValue(flat, fullPath, fallbackName) {
+  const keys = Object.keys(flat);
+  const normFull = lower(fullPath);
+  const normFallback = lower(fallbackName);
+
+  for (const key of keys) {
+    if (lower(key) === normFull) return { exists: true, value: flat[key], matchedPath: key };
+  }
+
+  for (const key of keys) {
+    if (lower(key).endsWith("." + normFull)) return { exists: true, value: flat[key], matchedPath: key };
+  }
+
+  if (fallbackName) {
+    for (const key of keys) {
+      if (lower(key).split(".").pop() === normFallback) return { exists: true, value: flat[key], matchedPath: key };
     }
+  }
 
-    function getObjectIdentity(flat, runtimeId) {
-      const candidates = [
-        "Reference Object.GUID (IFC)",
-        "Reference Object.GUID (MMS)",
-        "GUID (IFC)",
-        "GUID (MMS)",
-        "IFC GUID",
-        "IfcGUID",
-        "GlobalId",
-        "Reference Object.Common Type",
-        "Common Type"
-      ];
+  return { exists: false, value: "", matchedPath: "" };
+}
 
-      for (const candidate of candidates) {
-        const result = getPropertyValue(flat, candidate, candidate);
-        if (result.exists && !isBlank(result.value)) {
-          return {
-            label: String(result.value),
-            detail: candidate + ": " + String(result.value)
-          };
-        }
-      }
+function objectIdentity(objectId, flat) {
+  const guidKeys = Object.keys(flat).filter(key => lower(key).includes("guid"));
+  const ifcKey = guidKeys.find(key => lower(key).includes("ifc"));
+  const mmsKey = guidKeys.find(key => lower(key).includes("mms"));
+  const chosen = ifcKey || mmsKey || guidKeys[0];
 
-      return {
-        label: "Runtime " + runtimeId,
-        detail: "No GUID-like property found. Using Trimble runtime object ID."
-      };
-    }
+  if (chosen) {
+    return {
+      label: flat[chosen],
+      description: chosen + " = " + flat[chosen]
+    };
+  }
 
-    function describeExpected(rule) {
-      const type = rule.checkType || "text";
-      if (type === "text") return "Any non-empty text";
-      if (type === "number") return "Any number";
-      if (type === "list") return "One of: " + (rule.acceptedValues || []).join(", ");
-      if (type === "numberList") return "One of: " + (rule.acceptedValues || []).join(", ");
-      if (type === "numberRange") return "Between " + (rule.min || "-∞") + " and " + (rule.max || "∞");
-      if (type === "yesNo") return "Yes/No, True/False, or 1/0";
-      if (type === "date") return "Any date-like value";
-      return type;
-    }
+  return {
+    label: "Runtime " + objectId,
+    description: "No GUID-like property found. Using Trimble runtime object ID."
+  };
+}
 
-    function makePath(setName, attributeName) {
-      const set = String(setName || "").trim();
-      const attr = String(attributeName || "").trim();
-      if (!set) return attr;
-      if (!attr) return set + ".";
-      return set + "." + attr;
-    }
+async function selectOneObject(modelId, objectId) {
+  try {
+    ensureReady();
+    await API.viewer.setSelection({
+      modelObjectIds: [{
+        modelId: String(modelId),
+        objectRuntimeIds: [Number(objectId)]
+      }]
+    }, "set");
+    setStatus("Selected object " + objectId + " in model " + modelName(modelId) + ".");
+  } catch (error) {
+    setStatus("Could not select object.\n\n" + errorMessage(error));
+  }
+}
 
-    function lastPathPart(path) {
-      const parts = String(path || "").split(".");
-      return parts[parts.length - 1] || path;
-    }
+async function showOnlyValueFailures() {
+  try {
+    ensureReady();
+    if (!valueData.failItems.length) return setStatus("No failed value-check objects to show.");
+    await showAllObjects();
+    await API.viewer.setObjectState(
+      { modelObjectIds: valueData.allGroups.map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
+      { visible: false }
+    );
+    await API.viewer.setObjectState(
+      { modelObjectIds: groupByModel(valueData.failItems).map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
+      { visible: true }
+    );
+    setStatus("Showing only failed value-check objects.");
+  } catch (error) {
+    setStatus("Could not show only failed objects.\n\n" + errorMessage(error));
+  }
+}
 
-    function normalize(value) {
-      return String(value || "").trim().toLowerCase();
-    }
+async function showOnlySetProblems() {
+  try {
+    ensureReady();
+    if (!setData.missingItems.length) return setStatus("No objects missing required sets to show.");
+    await showAllObjects();
+    await API.viewer.setObjectState(
+      { modelObjectIds: setData.allGroups.map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
+      { visible: false }
+    );
+    await API.viewer.setObjectState(
+      { modelObjectIds: groupByModel(setData.missingItems).map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
+      { visible: true }
+    );
+    setStatus("Showing only objects missing required sets.");
+  } catch (error) {
+    setStatus("Could not show set problem objects.\n\n" + errorMessage(error));
+  }
+}
 
-    function isBlank(value) {
-      return value === undefined || value === null || String(value).trim() === "";
-    }
+async function showAllObjects() {
+  try {
+    ensureReady();
+    await API.viewer.setObjectState(undefined, { visible: true });
+    setStatus("All objects shown again.");
+  } catch (error) {
+    setStatus("Could not show all objects.\n\n" + errorMessage(error));
+  }
+}
 
-    function normalizeNumberText(value) {
-      return String(value).trim().replace(",", ".");
-    }
+function groupByModel(items) {
+  const map = new Map();
+  items.forEach(item => {
+    const key = String(item.modelId);
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key).add(Number(item.objectRuntimeId));
+  });
+  return Array.from(map.entries()).map(([modelId, ids]) => ({ modelId, objectRuntimeIds: Array.from(ids) }));
+}
 
-    function isFiniteNumber(value) {
-      if (isBlank(value)) return false;
-      return Number.isFinite(Number(normalizeNumberText(value)));
-    }
+function updateValueSummary(objects, checked, passed, failed, noKnown) {
+  document.getElementById("vObjects").textContent = objects;
+  document.getElementById("vChecked").textContent = checked;
+  document.getElementById("vPassed").textContent = passed;
+  document.getElementById("vFailed").textContent = failed;
+  document.getElementById("vNoKnown").textContent = noKnown;
+}
 
-    function csvEscape(value) {
-      const text = String(value ?? "");
-      if (/[",\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
-      return text;
-    }
+function updateSetSummary(objects, allRequired, missingRequired, onlyRequired, noKnown) {
+  document.getElementById("sObjects").textContent = objects;
+  document.getElementById("sAllRequired").textContent = allRequired;
+  document.getElementById("sMissingRequired").textContent = missingRequired;
+  document.getElementById("sOnlyRequired").textContent = onlyRequired;
+  document.getElementById("sNoKnown").textContent = noKnown;
+}
 
-    function downloadFile(filename, content, mimeType) {
-      const blob = new Blob([content], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+function clearAllReports() {
+  clearValueReport();
+  clearSetReport();
+  setProgress(0);
+  setStatus("Reports cleared.");
+}
 
-    function setProgress(percent) {
-      document.getElementById("progressBar").style.width = Math.max(0, Math.min(100, percent)) + "%";
-    }
+function clearValueReport() {
+  valueData = emptyValueData();
+  updateValueSummary(0,0,0,0,0);
+  document.getElementById("valueReport").textContent = "No value scan run yet.";
+}
 
-    function setStatus(message) {
-      document.getElementById("status").textContent = message;
-    }
+function clearSetReport() {
+  setData = emptySetData();
+  updateSetSummary(0,0,0,0,0);
+  document.getElementById("setReport").textContent = "No attribute set scan run yet.";
+}
 
-    function debug(title, value) {
-      const pre = document.getElementById("debug");
-      if (pre.textContent === "No debug output yet.") pre.textContent = "";
-      pre.textContent += "\n\n===== " + title + " =====\n" + safeStringify(value);
-    }
+function exportValueCsv() {
+  if (!valueData.csvRows.length) return setStatus("No value report rows to export.");
+  const rows = [["ModelName","ModelId","ObjectRuntimeId","ObjectIdentity","Set","AttributePath","Status","ActualValue","Expected","Message"], ...valueData.csvRows];
+  downloadFile("attribute-value-report.csv", toCsv(rows), "text/csv");
+}
 
-    function safeStringify(value) {
-      try { return JSON.stringify(value, null, 2); }
-      catch { return String(value); }
-    }
+function exportSetCsv() {
+  if (!setData.csvRows.length) return setStatus("No set report rows to export.");
+  const rows = [["ModelName","ModelId","ObjectRuntimeId","ObjectIdentity","FindingType","Value","DetectedSets"], ...setData.csvRows];
+  downloadFile("attribute-set-report.csv", toCsv(rows), "text/csv");
+}
 
-    function ensureReady() {
-      if (!API) throw new Error("Not connected to Trimble Connect yet.");
-    }
+function toCsv(rows) {
+  return rows.map(row => row.map(csvEscape).join(",")).join("\n");
+}
 
-    function pause(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
 
-    function safeId(value) {
-      return String(value).replace(/[^a-zA-Z0-9_-]/g, "_");
-    }
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-    function escapeJs(value) {
-      return String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-    }
+function describeExpected(rule) {
+  const checkType = rule.checkType || "text";
+  if (checkType === "text") return "Any non-empty text";
+  if (checkType === "number") return "Any number";
+  if (checkType === "list") return "One of: " + (rule.acceptedValues || []).join(", ");
+  if (checkType === "numberList") return "One of: " + (rule.acceptedValues || []).join(", ");
+  if (checkType === "numberRange") return "Between " + rule.min + " and " + rule.max;
+  if (checkType === "yesNo") return "Yes/No, True/False, or 1/0";
+  if (checkType === "date") return "Any date-like value";
+  return checkType;
+}
 
-    function escapeHtml(value) {
-      return String(value ?? "")
-        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
+function countGroupObjects(groups) {
+  return groups.reduce((sum, g) => sum + g.objectRuntimeIds.length, 0);
+}
 
-    function errorMessage(error) {
-      if (!error) return "Unknown error";
-      if (error.message) return error.message;
-      return String(error);
-    }
-  </script>
+function modelName(modelId) {
+  return modelNameById.get(String(modelId)) || String(modelId);
+}
+
+function makePath(setName, attrName) {
+  const set = String(setName || "").trim();
+  const attr = String(attrName || "").trim();
+  return set ? set + "." + attr : attr;
+}
+
+function isBlank(value) {
+  return value === undefined || value === null || String(value).trim() === "";
+}
+
+function isFiniteNumber(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return false;
+  return Number.isFinite(Number(String(value).replace(",", ".")));
+}
+
+function lower(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function pause(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function ensureReady() {
+  if (!API) throw new Error("Not connected to Trimble Connect yet.");
+}
+
+function setStatus(message) {
+  document.getElementById("status").textContent = message;
+}
+
+function setProgress(percent) {
+  document.getElementById("progressBar").style.width = Math.max(0, Math.min(100, percent)) + "%";
+}
+
+function debug(title, data) {
+  const output = document.getElementById("debugOutput");
+  output.textContent += "\n\n===== " + title + " =====\n" + safeStringify(data);
+}
+
+function safeStringify(value) {
+  try { return JSON.stringify(value, null, 2); }
+  catch { return String(value); }
+}
+
+function errorMessage(error) {
+  if (!error) return "Unknown error";
+  if (error.message) return error.message;
+  return String(error);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeJs(value) {
+  return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+</script>
 </body>
 </html>
