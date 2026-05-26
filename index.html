@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v15</title>
+  <title>Attribute Checker v17</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -159,6 +159,15 @@
       <div class="hint">
         Choose which sets are required for this scan. Selecting zero required sets is allowed and works as inventory mode: it only counts which sets exist on objects.
       </div>
+
+      <label class="check-item" style="margin-top:8px; max-width:520px; font-weight:normal;">
+        <input id="skipNoKnownAsMissing" type="checkbox" checked>
+        <span>Do not count objects with no known attribute set as missing required sets</span>
+      </label>
+      <div class="hint">
+        Recommended ON. These objects are still counted under "No known set", but they are not treated as failed/missing. Turn OFF only if you want a strict check where objects with no recognized sets fail the required-set check.
+      </div>
+
       <div id="setCheckboxes" class="set-grid"></div>
     </div>
 
@@ -302,6 +311,11 @@ function renderSetCheckboxes() {
 
 function getRequiredSets() {
   return Array.from(document.querySelectorAll(".required-set-checkbox:checked")).map(cb => cb.value);
+}
+
+function getSkipNoKnownAsMissing() {
+  const input = document.getElementById("skipNoKnownAsMissing");
+  return input ? input.checked : true;
 }
 
 function getIgnoredCommonTypes() {
@@ -823,6 +837,7 @@ async function runSetScan() {
     await loadModelNames();
 
     const requiredSets = getRequiredSets();
+    const skipNoKnownAsMissing = getSkipNoKnownAsMissing();
     setStatus("Getting objects from loaded viewer models...");
     const groups = normalizeObjectGroups(await API.viewer.getObjects());
     setData.allGroups = groups;
@@ -886,6 +901,16 @@ async function runSetScan() {
           if (detectedSets.length === 0) {
             noKnown++;
             modelRecord.noKnownObjects.push({ modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets });
+
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "no_known_set", "", ""
+            ]);
+
+            if (skipNoKnownAsMissing) {
+              setProgress((processed / totalObjects) * 100);
+              continue;
+            }
           }
 
           if (requiredSets.length > 0 && missingSets.length > 0) {
@@ -935,6 +960,7 @@ async function runSetScan() {
     setStatus(
       "Attribute set scan complete.\n" +
       "Required sets selected: " + (requiredSets.length ? requiredSets.join(", ") : "none - inventory mode") + "\n" +
+      "No-known-set objects counted as missing: " + (skipNoKnownAsMissing ? "NO" : "YES") + "\n" +
       "Objects found: " + totalObjects + "\n" +
       "Missing required sets: " + missingRequired + "\n" +
       "Objects with only required sets: " + onlyRequired + "\n" +
