@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "sets": [
+    {
+      "name": "0_Element",
+      "attributes": [
+        {
+          "name": "MMI",
+          "path": "0_Element.MMI",
+          "checkType": "numberList",
+          "required": true,
+          "acceptedValues": [
+            "200",
+            "300",
+            "350",
+            "400"
+          ],
+          "min": "",
+          "max": "",
+          "note": "Example MMI check"
+        },
+        {
+          "name": "Status",
+          "path": "0_Element.Status",
+          "checkType": "list",
+          "required": true,
+          "acceptedValues": [
+            "Approved",
+            "As built",
+            "Preliminary"
+          ],
+          "min": "",
+          "max": "",
+          "note": "Example status check"
+        }
+      ]
+    }
+  ]
+}

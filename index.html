@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Attribute Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
+
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --border: #d7dde4;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --primary: #1f6feb;
+      --primary-dark: #174ea6;
+      --danger: #dc2626;
+      --warning: #f59e0b;
+      --good: #16a34a;
+      --info: #0ea5e9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    header {
+      padding: 14px 16px;
+      background: #111827;
+      color: white;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+
+    main {
+      padding: 12px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: #374151;
+    }
+
+    select,
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px;
+      font-size: 13px;
+      background: white;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 7px;
+      padding: 8px 10px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button:hover { background: var(--primary-dark); }
+
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+
+    button.danger { background: var(--danger); }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .status {
+      padding: 8px;
+      border-radius: 7px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .summary-number {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .good { color: var(--good); }
+    .bad { color: var(--danger); }
+    .missing { color: var(--warning); }
+    .info { color: var(--info); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: white;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #edf0f3;
+      padding: 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #374151;
+      position: sticky;
+      top: 0;
+    }
+
+    .table-wrap {
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 6px;
+      border-radius: 999px;
+      color: white;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .badge.ok { background: var(--good); }
+    .badge.incorrect { background: var(--danger); }
+    .badge.missing { background: var(--warning); color: #111827; }
+    .badge.na { background: #64748b; }
+
+    details {
+      margin-top: 8px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
+      max-height: 360px;
+      overflow: auto;
+      font-size: 11px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Attribute Checker</h1>
+    <p>Checks selected model objects against project-specific attribute rules.</p>
+  </header>
+
+  <main>
+    <div class="panel">
+      <div class="row">
+        <div>
+          <label for="rulesUrl">Rules JSON URL</label>
+          <input id="rulesUrl" type="text" value="rules.json?v=1" />
+          <div class="hint">
+            Put your exported rule file beside this extension on GitHub Pages, normally as <b>rules.json</b>.
+          </div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button onclick="loadRules()">Load rules</button>
+        <button class="secondary" onclick="inspectSelectedObject()">Inspect selected object</button>
+      </div>
+
+      <div id="status" class="status" style="margin-top:10px;">Starting extension...</div>
+    </div>
+
+    <div class="panel">
+      <label for="ruleSetSelect">Rule set</label>
+      <select id="ruleSetSelect"></select>
+
+      <div class="buttons">
+        <button onclick="checkSelectedObjects()">Check selected objects</button>
+        <button class="secondary" onclick="selectResultGroup('correct')">Select correct</button>
+        <button class="secondary" onclick="selectResultGroup('incorrect')">Select incorrect</button>
+        <button class="secondary" onclick="selectResultGroup('missing')">Select missing</button>
+        <button class="danger" onclick="resetColors()">Reset checked colors</button>
+        <button class="secondary" onclick="exportResultsCsv()">Export results CSV</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div id="sumChecked" class="summary-number info">0</div>
+          <div>Checked</div>
+        </div>
+        <div class="summary-card">
+          <div id="sumCorrect" class="summary-number good">0</div>
+          <div>Correct</div>
+        </div>
+        <div class="summary-card">
+          <div id="sumIncorrect" class="summary-number bad">0</div>
+          <div>Incorrect</div>
+        </div>
+        <div class="summary-card">
+          <div id="sumMissing" class="summary-number missing">0</div>
+          <div>Missing</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Object</th>
+              <th>Status</th>
+              <th>Attribute</th>
+              <th>Actual value</th>
+              <th>Expected</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody id="resultRows"></tbody>
+        </table>
+      </div>
+
+      <details>
+        <summary>Inspector output / debug details</summary>
+        <pre id="debugOutput">No inspector output yet.</pre>
+      </details>
+    </div>
+  </main>
+
+  <script>
+    let API = null;
+    let rules = null;
+    let lastResults = [];
+    let lastCheckedGroups = {
+      correct: [],
+      incorrect: [],
+      missing: []
+    };
+
+    const COLORS = {
+      correct: "#22c55e",
+      incorrect: "#ef4444",
+      missing: "#f59e0b"
+    };
+
+    init();
+
+    async function init() {
+      try {
+        if (!window.TrimbleConnectWorkspace) {
+          setStatus("Workspace API script not found. Check internet connection and script URL.");
+          return;
+        }
+
+        API = await window.TrimbleConnectWorkspace.connect(window.parent, onWorkspaceEvent, 30000);
+        setStatus("Connected to Trimble Connect. Load rules to begin.");
+
+        await loadRules();
+      } catch (error) {
+        console.error(error);
+        setStatus("Could not connect to Trimble Connect Workspace API.\n\n" + errorMessage(error));
+      }
+    }
+
+    function onWorkspaceEvent(event, data) {
+      // Reserved for later. For now we keep the extension button-driven.
+      console.log("Workspace event:", event, data);
+    }
+
+    async function loadRules() {
+      try {
+        const url = document.getElementById("rulesUrl").value.trim() || "rules.json?v=1";
+        const response = await fetch(url, { cache: "no-store" });
+
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status + " while loading " + url);
+        }
+
+        const loaded = await response.json();
+        if (!loaded || !Array.isArray(loaded.sets)) {
+          throw new Error("Rules file is not valid. Expected JSON with a 'sets' array.");
+        }
+
+        rules = loaded;
+        renderRuleSetOptions();
+        setStatus("Rules loaded: " + rules.sets.length + " set(s).");
+      } catch (error) {
+        console.error(error);
+        setStatus("Could not load rules.\n\n" + errorMessage(error));
+      }
+    }
+
+    function renderRuleSetOptions() {
+      const select = document.getElementById("ruleSetSelect");
+      select.innerHTML = "";
+
+      if (!rules || !rules.sets || rules.sets.length === 0) {
+        const option = document.createElement("option");
+        option.textContent = "No rule sets loaded";
+        option.value = "";
+        select.appendChild(option);
+        return;
+      }
+
+      rules.sets.forEach((set, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = set.name + " (" + (set.attributes || []).length + " attributes)";
+        select.appendChild(option);
+      });
+    }
+
+    async function checkSelectedObjects() {
+      try {
+        ensureReady();
+
+        const ruleSet = getSelectedRuleSet();
+        const selectionGroups = await getSelectionGroups();
+
+        if (selectionGroups.length === 0) {
+          setStatus("No objects selected. Select one or more objects in the 3D viewer first.");
+          return;
+        }
+
+        setStatus("Checking selected objects...");
+
+        lastResults = [];
+        lastCheckedGroups = { correct: [], incorrect: [], missing: [] };
+
+        for (const group of selectionGroups) {
+          const objectProperties = await API.viewer.getObjectProperties(group.modelId, group.objectRuntimeIds);
+
+          for (const object of objectProperties) {
+            const runtimeId = object.id;
+            const flat = flattenProperties(object);
+            const objectAttributeResults = [];
+
+            for (const rule of (ruleSet.attributes || [])) {
+              const result = evaluateRule(rule, flat);
+              objectAttributeResults.push(result);
+
+              lastResults.push({
+                modelId: group.modelId,
+                objectRuntimeId: runtimeId,
+                objectLabel: shortObjectLabel(group.modelId, runtimeId),
+                status: result.status,
+                attributePath: rule.path || makePath(ruleSet.name, rule.name),
+                actualValue: result.actualValue,
+                expected: describeExpected(rule),
+                message: result.message
+              });
+            }
+
+            const objectStatus = getObjectOverallStatus(objectAttributeResults);
+            lastCheckedGroups[objectStatus].push({
+              modelId: group.modelId,
+              objectRuntimeId: runtimeId
+            });
+          }
+        }
+
+        renderResults();
+        updateSummary();
+        await colorResults();
+
+        setStatus("Check complete. Objects colored: green = correct, red = incorrect, orange = missing.");
+      } catch (error) {
+        console.error(error);
+        setStatus("Check failed.\n\n" + errorMessage(error));
+      }
+    }
+
+    function evaluateRule(rule, flat) {
+      const path = rule.path || "";
+      const fallbackName = rule.name || "";
+      const required = rule.required !== false;
+
+      const lookup = getPropertyValue(flat, path, fallbackName);
+      const exists = lookup.exists;
+      const value = lookup.value;
+
+      if (!exists || isBlank(value)) {
+        if (required) {
+          return {
+            status: "missing",
+            actualValue: "",
+            message: "Required attribute is missing or empty."
+          };
+        }
+
+        return {
+          status: "correct",
+          actualValue: "",
+          message: "Optional attribute is empty."
+        };
+      }
+
+      const textValue = String(value).trim();
+      const checkType = rule.checkType || "text";
+
+      if (checkType === "text") {
+        return { status: "correct", actualValue: textValue, message: "Text value exists." };
+      }
+
+      if (checkType === "number") {
+        return isFiniteNumber(textValue)
+          ? { status: "correct", actualValue: textValue, message: "Number value exists." }
+          : { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+      }
+
+      if (checkType === "list") {
+        const allowed = (rule.acceptedValues || []).map(v => String(v).trim().toLowerCase());
+        return allowed.includes(textValue.toLowerCase())
+          ? { status: "correct", actualValue: textValue, message: "Value is in accepted text list." }
+          : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted text list." };
+      }
+
+      if (checkType === "numberList") {
+        if (!isFiniteNumber(textValue)) {
+          return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+        }
+
+        const numberValue = Number(textValue);
+        const allowedNumbers = (rule.acceptedValues || [])
+          .filter(v => isFiniteNumber(v))
+          .map(v => Number(v));
+
+        return allowedNumbers.includes(numberValue)
+          ? { status: "correct", actualValue: textValue, message: "Value is in accepted number list." }
+          : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted number list." };
+      }
+
+      if (checkType === "numberRange") {
+        if (!isFiniteNumber(textValue)) {
+          return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+        }
+
+        const numberValue = Number(textValue);
+        const min = rule.min === "" || rule.min === undefined ? -Infinity : Number(rule.min);
+        const max = rule.max === "" || rule.max === undefined ? Infinity : Number(rule.max);
+
+        return numberValue >= min && numberValue <= max
+          ? { status: "correct", actualValue: textValue, message: "Number is inside range." }
+          : { status: "incorrect", actualValue: textValue, message: "Number is outside range." };
+      }
+
+      if (checkType === "yesNo") {
+        const allowed = ["yes", "no", "true", "false", "1", "0"];
+        return allowed.includes(textValue.toLowerCase())
+          ? { status: "correct", actualValue: textValue, message: "Yes/no value accepted." }
+          : { status: "incorrect", actualValue: textValue, message: "Expected yes/no, true/false, or 1/0." };
+      }
+
+      if (checkType === "date") {
+        const parsed = Date.parse(textValue);
+        return Number.isNaN(parsed)
+          ? { status: "incorrect", actualValue: textValue, message: "Value does not look like a date." }
+          : { status: "correct", actualValue: textValue, message: "Date-like value exists." };
+      }
+
+      return { status: "correct", actualValue: textValue, message: "No specific check type matched." };
+    }
+
+    function getObjectOverallStatus(attributeResults) {
+      if (attributeResults.some(r => r.status === "missing")) return "missing";
+      if (attributeResults.some(r => r.status === "incorrect")) return "incorrect";
+      return "correct";
+    }
+
+    async function colorResults() {
+      await resetColors();
+
+      await colorGroup(lastCheckedGroups.correct, COLORS.correct);
+      await colorGroup(lastCheckedGroups.incorrect, COLORS.incorrect);
+      await colorGroup(lastCheckedGroups.missing, COLORS.missing);
+    }
+
+    async function colorGroup(items, color) {
+      const grouped = groupByModel(items);
+      for (const group of grouped) {
+        await API.viewer.setObjectState(
+          {
+            modelObjectIds: [
+              {
+                modelId: group.modelId,
+                objectRuntimeIds: group.objectRuntimeIds
+              }
+            ]
+          },
+          { color }
+        );
+      }
+    }
+
+    async function resetColors() {
+      if (!API) return;
+
+      const allItems = [
+        ...lastCheckedGroups.correct,
+        ...lastCheckedGroups.incorrect,
+        ...lastCheckedGroups.missing
+      ];
+
+      const grouped = groupByModel(allItems);
+
+      for (const group of grouped) {
+        await API.viewer.setObjectState(
+          {
+            modelObjectIds: [
+              {
+                modelId: group.modelId,
+                objectRuntimeIds: group.objectRuntimeIds
+              }
+            ]
+          },
+          { color: "reset" }
+        );
+      }
+
+      setStatus("Reset colors for objects checked in the last run.");
+    }
+
+    async function selectResultGroup(status) {
+      try {
+        ensureReady();
+
+        const items = lastCheckedGroups[status] || [];
+        if (items.length === 0) {
+          setStatus("No objects in result group: " + status);
+          return;
+        }
+
+        const grouped = groupByModel(items);
+
+        await API.viewer.setSelection(
+          {
+            modelObjectIds: grouped.map(group => ({
+              modelId: group.modelId,
+              objectRuntimeIds: group.objectRuntimeIds
+            }))
+          },
+          "set"
+        );
+
+        setStatus("Selected " + items.length + " " + status + " object(s).");
+      } catch (error) {
+        console.error(error);
+        setStatus("Could not select result group.\n\n" + errorMessage(error));
+      }
+    }
+
+    async function inspectSelectedObject() {
+      try {
+        ensureReady();
+
+        const selectionGroups = await getSelectionGroups();
+        if (selectionGroups.length === 0) {
+          setStatus("No object selected. Select one object in the 3D viewer first.");
+          return;
+        }
+
+        const firstGroup = selectionGroups[0];
+        const firstRuntimeId = firstGroup.objectRuntimeIds[0];
+
+        const objectProperties = await API.viewer.getObjectProperties(firstGroup.modelId, [firstRuntimeId]);
+        const object = objectProperties[0];
+        const flat = flattenProperties(object);
+
+        const lines = [];
+        lines.push("Model ID: " + firstGroup.modelId);
+        lines.push("Runtime object ID: " + firstRuntimeId);
+        lines.push("");
+        lines.push("Flattened property paths found:");
+        lines.push("");
+
+        Object.keys(flat).sort().forEach(key => {
+          lines.push(key + " = " + flat[key]);
+        });
+
+        lines.push("");
+        lines.push("Raw object properties:");
+        lines.push(JSON.stringify(object, null, 2));
+
+        document.getElementById("debugOutput").textContent = lines.join("\n");
+        setStatus("Inspector complete. Open 'Inspector output / debug details' below.");
+      } catch (error) {
+        console.error(error);
+        setStatus("Inspector failed.\n\n" + errorMessage(error));
+      }
+    }
+
+    function flattenProperties(object) {
+      const output = {};
+
+      function add(path, value) {
+        if (!path) return;
+        if (value === undefined || value === null) return;
+
+        if (typeof value === "object") {
+          return;
+        }
+
+        output[path] = String(value);
+      }
+
+      function walk(node, prefix) {
+        if (node === null || node === undefined) return;
+
+        if (Array.isArray(node)) {
+          node.forEach(item => walk(item, prefix));
+          return;
+        }
+
+        if (typeof node !== "object") {
+          add(prefix, node);
+          return;
+        }
+
+        const possibleName = node.name || node.Name || node.key || node.Key || node.displayName || node.label;
+        const possibleValue = node.value ?? node.Value ?? node.val ?? node.text ?? node.Text;
+
+        const currentPath = possibleName
+          ? (prefix ? prefix + "." + possibleName : String(possibleName))
+          : prefix;
+
+        if (possibleName && possibleValue !== undefined && possibleValue !== null && typeof possibleValue !== "object") {
+          add(currentPath, possibleValue);
+        }
+
+        const childCollections = [
+          node.properties,
+          node.Properties,
+          node.children,
+          node.Children,
+          node.items,
+          node.Items,
+          node.propertySets,
+          node.PropertySets
+        ];
+
+        childCollections.forEach(children => {
+          if (children) walk(children, currentPath);
+        });
+
+        Object.keys(node).forEach(key => {
+          if (["name", "Name", "key", "Key", "displayName", "label", "value", "Value", "val", "text", "Text",
+               "properties", "Properties", "children", "Children", "items", "Items", "propertySets", "PropertySets"].includes(key)) {
+            return;
+          }
+
+          const value = node[key];
+          if (value === undefined || value === null) return;
+
+          const newPath = prefix ? prefix + "." + key : key;
+
+          if (typeof value === "object") {
+            walk(value, newPath);
+          } else {
+            add(newPath, value);
+          }
+        });
+      }
+
+      walk(object.properties || object.Properties || object, "");
+
+      return output;
+    }
+
+    function getPropertyValue(flat, fullPath, fallbackName) {
+      const keys = Object.keys(flat);
+      const normalizedFullPath = normalizePath(fullPath);
+      const normalizedFallback = normalizePath(fallbackName);
+
+      for (const key of keys) {
+        if (normalizePath(key) === normalizedFullPath) {
+          return { exists: true, value: flat[key], matchedPath: key };
+        }
+      }
+
+      for (const key of keys) {
+        if (normalizePath(key).endsWith("." + normalizedFullPath)) {
+          return { exists: true, value: flat[key], matchedPath: key };
+        }
+      }
+
+      if (fallbackName) {
+        for (const key of keys) {
+          if (normalizePath(key).split(".").pop() === normalizedFallback) {
+            return { exists: true, value: flat[key], matchedPath: key };
+          }
+        }
+      }
+
+      return { exists: false, value: "", matchedPath: "" };
+    }
+
+    function normalizePath(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function isBlank(value) {
+      return value === undefined || value === null || String(value).trim() === "";
+    }
+
+    function isFiniteNumber(value) {
+      if (value === null || value === undefined || String(value).trim() === "") return false;
+      return Number.isFinite(Number(String(value).replace(",", ".")));
+    }
+
+    function makePath(setName, attributeName) {
+      const set = String(setName || "").trim();
+      const attribute = String(attributeName || "").trim();
+      if (!set) return attribute;
+      if (!attribute) return set + ".";
+      return set + "." + attribute;
+    }
+
+    function describeExpected(rule) {
+      const checkType = rule.checkType || "text";
+
+      if (checkType === "text") return "Any non-empty text";
+      if (checkType === "number") return "Any number";
+      if (checkType === "list") return "One of: " + (rule.acceptedValues || []).join(", ");
+      if (checkType === "numberList") return "One of: " + (rule.acceptedValues || []).join(", ");
+      if (checkType === "numberRange") return "Between " + rule.min + " and " + rule.max;
+      if (checkType === "yesNo") return "Yes/No, True/False, or 1/0";
+      if (checkType === "date") return "Any date-like value";
+
+      return checkType;
+    }
+
+    async function getSelectionGroups() {
+      const selection = await API.viewer.getSelection();
+
+      if (!selection) return [];
+
+      if (Array.isArray(selection.modelObjectIds)) {
+        return selection.modelObjectIds
+          .map(group => ({
+            modelId: group.modelId,
+            objectRuntimeIds: group.objectRuntimeIds || []
+          }))
+          .filter(group => group.modelId && group.objectRuntimeIds.length > 0);
+      }
+
+      if (Array.isArray(selection)) {
+        return selection
+          .map(group => ({
+            modelId: group.modelId,
+            objectRuntimeIds: group.objectRuntimeIds || group.ids || []
+          }))
+          .filter(group => group.modelId && group.objectRuntimeIds.length > 0);
+      }
+
+      return [];
+    }
+
+    function groupByModel(items) {
+      const map = new Map();
+
+      items.forEach(item => {
+        if (!map.has(item.modelId)) {
+          map.set(item.modelId, new Set());
+        }
+        map.get(item.modelId).add(item.objectRuntimeId);
+      });
+
+      return Array.from(map.entries()).map(([modelId, idSet]) => ({
+        modelId,
+        objectRuntimeIds: Array.from(idSet)
+      }));
+    }
+
+    function renderResults() {
+      const tbody = document.getElementById("resultRows");
+      tbody.innerHTML = "";
+
+      lastResults.forEach(row => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${escapeHtml(row.objectLabel)}</td>
+          <td>${statusBadge(row.status)}</td>
+          <td>${escapeHtml(row.attributePath)}</td>
+          <td>${escapeHtml(row.actualValue)}</td>
+          <td>${escapeHtml(row.expected)}</td>
+          <td>${escapeHtml(row.message)}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function statusBadge(status) {
+      if (status === "correct") return '<span class="badge ok">Correct</span>';
+      if (status === "incorrect") return '<span class="badge incorrect">Incorrect</span>';
+      if (status === "missing") return '<span class="badge missing">Missing</span>';
+      return '<span class="badge na">' + escapeHtml(status) + '</span>';
+    }
+
+    function updateSummary() {
+      const checkedObjects = new Set(lastResults.map(r => r.modelId + "::" + r.objectRuntimeId)).size;
+
+      document.getElementById("sumChecked").textContent = checkedObjects;
+      document.getElementById("sumCorrect").textContent = lastCheckedGroups.correct.length;
+      document.getElementById("sumIncorrect").textContent = lastCheckedGroups.incorrect.length;
+      document.getElementById("sumMissing").textContent = lastCheckedGroups.missing.length;
+    }
+
+    function exportResultsCsv() {
+      if (!lastResults.length) {
+        setStatus("No results to export yet.");
+        return;
+      }
+
+      const rows = [
+        ["ModelId", "ObjectRuntimeId", "Status", "AttributePath", "ActualValue", "Expected", "Message"]
+      ];
+
+      lastResults.forEach(row => {
+        rows.push([
+          row.modelId,
+          row.objectRuntimeId,
+          row.status,
+          row.attributePath,
+          row.actualValue,
+          row.expected,
+          row.message
+        ]);
+      });
+
+      const csv = rows.map(row => row.map(csvEscape).join(",")).join("\n");
+      downloadFile("attribute-check-results.csv", csv, "text/csv");
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\n]/.test(text)) {
+        return '"' + text.replace(/"/g, '""') + '"';
+      }
+      return text;
+    }
+
+    function downloadFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function getSelectedRuleSet() {
+      if (!rules || !Array.isArray(rules.sets)) {
+        throw new Error("Rules are not loaded.");
+      }
+
+      const index = Number(document.getElementById("ruleSetSelect").value);
+      const ruleSet = rules.sets[index];
+
+      if (!ruleSet) {
+        throw new Error("No rule set selected.");
+      }
+
+      return ruleSet;
+    }
+
+    function ensureReady() {
+      if (!API) throw new Error("Not connected to Trimble Connect yet.");
+      if (!rules) throw new Error("Rules are not loaded yet.");
+    }
+
+    function shortObjectLabel(modelId, runtimeId) {
+      const shortModel = String(modelId || "").slice(0, 8);
+      return shortModel + " / " + runtimeId;
+    }
+
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
+    }
+
+    function errorMessage(error) {
+      if (!error) return "Unknown error";
+      if (error.message) return error.message;
+      return String(error);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
