@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v8</title>
+  <title>Attribute Checker v9</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -63,7 +63,7 @@
 <body>
 <header>
   <h1>Attribute Checker</h1>
-  <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer.</p>
+  <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer. Includes ignored common-type filtering.</p>
 </header>
 
 <main>
@@ -76,6 +76,15 @@
     <div class="hint">
       Rules are loaded automatically from <b>rules.json</b> in the same GitHub Pages folder. Attribute set lists in the second tab come from that JSON file.
     </div>
+
+    <div style="margin-top:10px;">
+      <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
+      <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM" />
+      <div class="hint">
+        Separate values with commas. These objects are skipped before checking. Add more here if you find more non-physical/container types causing false errors.
+      </div>
+    </div>
+
     <div id="status" class="status">Starting extension...</div>
     <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
   </div>
@@ -112,6 +121,7 @@
         <div class="card"><div id="vChecked" class="num info">0</div><div>Objects checked</div></div>
         <div class="card"><div id="vPassed" class="num good">0</div><div>Passed</div></div>
         <div class="card"><div id="vFailed" class="num bad">0</div><div>Failed</div></div>
+        <div class="card"><div id="vIgnored" class="num warn">0</div><div>Ignored by type</div></div>
         <div class="card"><div id="vNoKnown" class="num warn">0</div><div>Not checked - no matching set</div></div>
       </div>
     </div>
@@ -144,6 +154,7 @@
         <div class="card"><div id="sAllRequired" class="num good">0</div><div>Has all required sets</div></div>
         <div class="card"><div id="sMissingRequired" class="num bad">0</div><div>Missing required sets</div></div>
         <div class="card"><div id="sOnlyRequired" class="num warn">0</div><div>Only required sets</div></div>
+        <div class="card"><div id="sIgnored" class="num warn">0</div><div>Ignored by type</div></div>
         <div class="card"><div id="sNoKnown" class="num warn">0</div><div>No known set</div></div>
       </div>
     </div>
@@ -173,11 +184,11 @@ let setData = emptySetData();
 init();
 
 function emptyValueData() {
-  return { allGroups: [], passItems: [], failItems: [], noKnownSetItems: [], failuresByModel: new Map(), csvRows: [] };
+  return { allGroups: [], passItems: [], failItems: [], noKnownSetItems: [], ignoredItems: [], failuresByModel: new Map(), csvRows: [] };
 }
 
 function emptySetData() {
-  return { allGroups: [], missingItems: [], onlyRequiredItems: [], reportByModel: new Map(), csvRows: [] };
+  return { allGroups: [], missingItems: [], onlyRequiredItems: [], ignoredItems: [], reportByModel: new Map(), csvRows: [] };
 }
 
 async function init() {
@@ -279,6 +290,55 @@ function getRequiredSets() {
   return Array.from(document.querySelectorAll(".required-set-checkbox:checked")).map(cb => cb.value);
 }
 
+function getIgnoredCommonTypes() {
+  const input = document.getElementById("ignoredCommonTypes");
+  if (!input) return [];
+  return input.value
+    .split(",")
+    .map(v => normalizeTypeValue(v))
+    .filter(Boolean);
+}
+
+function normalizeTypeValue(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/_/g, "")
+    .replace(/-/g, "")
+    .toUpperCase();
+}
+
+function getCommonType(flat) {
+  const keys = Object.keys(flat);
+
+  const preferred = keys.find(key => {
+    const k = lower(key);
+    return k.endsWith("common type") || k.endsWith(".commontype") || k.includes("common type") || k.includes("commontype");
+  });
+
+  if (preferred) return String(flat[preferred] || "").trim();
+
+  const typeLike = keys.find(key => {
+    const k = lower(key);
+    return k.endsWith(".type") || k.endsWith(" type") || k.includes("reference object.common");
+  });
+
+  return typeLike ? String(flat[typeLike] || "").trim() : "";
+}
+
+function shouldIgnoreObject(flat) {
+  const commonType = getCommonType(flat);
+  if (!commonType) return { ignore: false, commonType: "" };
+
+  const ignored = getIgnoredCommonTypes();
+  const normalizedCommonType = normalizeTypeValue(commonType);
+
+  return {
+    ignore: ignored.includes(normalizedCommonType),
+    commonType
+  };
+}
+
 function selectAllRequiredSets() {
   document.querySelectorAll(".required-set-checkbox").forEach(cb => cb.checked = true);
 }
@@ -306,7 +366,7 @@ async function runValueScan() {
     if (totalObjects === 0) return setStatus("No objects returned by API.viewer.getObjects().");
 
     const batchSize = Number(document.getElementById("batchSize").value || 100);
-    let processed = 0, checked = 0, passed = 0, failed = 0, noKnown = 0;
+    let processed = 0, checked = 0, passed = 0, failed = 0, noKnown = 0, ignored = 0;
 
     for (const group of groups) {
       for (let i = 0; i < group.objectRuntimeIds.length; i += batchSize) {
@@ -317,9 +377,22 @@ async function runValueScan() {
         for (const objectId of batchIds) {
           const objectProps = propertyMap.get(String(objectId));
           const flat = objectProps ? flattenProperties(objectProps) : {};
-          const result = checkObjectValues(group.modelId, objectId, flat);
+          const ignoreCheck = shouldIgnoreObject(flat);
 
           processed++;
+
+          if (ignoreCheck.ignore) {
+            ignored++;
+            valueData.ignoredItems.push({
+              modelId: group.modelId,
+              objectRuntimeId: objectId,
+              commonType: ignoreCheck.commonType
+            });
+            setProgress((processed / totalObjects) * 100);
+            continue;
+          }
+
+          const result = checkObjectValues(group.modelId, objectId, flat);
 
           if (result.status === "noKnownSet") {
             noKnown++;
@@ -344,7 +417,7 @@ async function runValueScan() {
       }
     }
 
-    updateValueSummary(totalObjects, checked, passed, failed, noKnown);
+    updateValueSummary(totalObjects, checked, passed, failed, noKnown, ignored);
     renderValueReport();
     setProgress(100);
     setStatus(
@@ -353,6 +426,7 @@ async function runValueScan() {
       "Objects checked: " + checked + "\n" +
       "Passed: " + passed + "\n" +
       "Failed: " + failed + "\n" +
+      "Ignored by common type: " + ignored + "\n" +
       "Not checked - no matching set: " + noKnown
     );
   } catch (error) {
@@ -501,7 +575,7 @@ async function runSetScan() {
     if (totalObjects === 0) return setStatus("No objects returned by API.viewer.getObjects().");
 
     const batchSize = Number(document.getElementById("batchSize").value || 100);
-    let processed = 0, hasAllRequired = 0, missingRequired = 0, onlyRequired = 0, noKnown = 0;
+    let processed = 0, hasAllRequired = 0, missingRequired = 0, onlyRequired = 0, noKnown = 0, ignored = 0;
 
     for (const group of groups) {
       const modelKey = String(group.modelId);
@@ -515,13 +589,36 @@ async function runSetScan() {
         for (const objectId of batchIds) {
           const objectProps = propertyMap.get(String(objectId));
           const flat = objectProps ? flattenProperties(objectProps) : {};
+          const ignoreCheck = shouldIgnoreObject(flat);
+
+          processed++;
+
+          if (ignoreCheck.ignore) {
+            ignored++;
+            const identity = objectIdentity(objectId, flat);
+            const ignoredItem = {
+              modelId: group.modelId,
+              objectRuntimeId: objectId,
+              identity,
+              commonType: ignoreCheck.commonType,
+              detectedSets: []
+            };
+            setData.ignoredItems.push(ignoredItem);
+            modelRecord.ignoredObjects.push(ignoredItem);
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "ignored_by_common_type", ignoreCheck.commonType, ""
+            ]);
+            setProgress((processed / totalObjects) * 100);
+            continue;
+          }
+
           const detectedSets = detectKnownSets(flat);
           const detectedLower = new Set(detectedSets.map(lower));
           const missingSets = requiredSets.filter(s => !detectedLower.has(lower(s)));
           const extraSets = detectedSets.filter(s => !requiredSets.map(lower).includes(lower(s)));
           const identity = objectIdentity(objectId, flat);
 
-          processed++;
           modelRecord.objectsChecked++;
 
           detectedSets.forEach(setName => {
@@ -573,7 +670,7 @@ async function runSetScan() {
       onlyRequired = 0;
     }
 
-    updateSetSummary(totalObjects, hasAllRequired, missingRequired, onlyRequired, noKnown);
+    updateSetSummary(totalObjects, hasAllRequired, missingRequired, onlyRequired, noKnown, ignored);
     renderSetReport(requiredSets);
     setProgress(100);
 
@@ -583,6 +680,7 @@ async function runSetScan() {
       "Objects found: " + totalObjects + "\n" +
       "Missing required sets: " + missingRequired + "\n" +
       "Objects with only required sets: " + onlyRequired + "\n" +
+      "Ignored by common type: " + ignored + "\n" +
       "Objects with no known set: " + noKnown
     );
   } catch (error) {
@@ -602,7 +700,8 @@ function ensureSetModelRecord(modelId) {
       setCounts: new Map(),
       missingObjects: [],
       onlyRequiredObjects: [],
-      noKnownObjects: []
+      noKnownObjects: [],
+      ignoredObjects: []
     });
   }
   return setData.reportByModel.get(key);
@@ -637,6 +736,7 @@ function renderSetReport(requiredSets) {
         <span class="badge red">${escapeHtml(missingText)}</span>
         ${requiredSets.length ? `<span class="badge orange">${model.onlyRequiredObjects.length} only required set(s)</span>` : ""}
         <span class="badge orange">${model.noKnownObjects.length} no known set</span>
+        <span class="badge blue">${model.ignoredObjects.length} ignored</span>
       </summary>
       <div class="detail-body">
         <h4>Detected set counts</h4>
@@ -646,6 +746,7 @@ function renderSetReport(requiredSets) {
         </table>
         ${requiredSets.length ? renderMissingList(model.missingObjects) : ""}
         ${onlyRequiredBlock}
+        ${renderIgnoredList(model.ignoredObjects)}
         ${renderObjectList("Objects with no known set", model.noKnownObjects, "orange")}
       </div>
     `;
@@ -671,6 +772,31 @@ function renderMissingList(items) {
         `).join("")}
       </tbody>
     </table>
+  `;
+}
+
+function renderIgnoredList(items) {
+  if (!items.length) return `<h4>Objects ignored by common type</h4><div class="hint">None.</div>`;
+
+  const counts = new Map();
+  items.forEach(item => counts.set(item.commonType || "Unknown", (counts.get(item.commonType || "Unknown") || 0) + 1));
+
+  const rows = Array.from(counts.entries())
+    .sort((a,b) => a[0].localeCompare(b[0]))
+    .map(([type, count]) => `<tr><td>${escapeHtml(type)}</td><td>${count}</td></tr>`)
+    .join("");
+
+  return `
+    <details class="object">
+      <summary>Objects ignored by common type <span class="badge blue">${items.length}</span></summary>
+      <div class="detail-body">
+        <table>
+          <thead><tr><th>Common Type</th><th>Ignored objects</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="hint">These objects were skipped before checking because their Common Type matched the ignored type list.</div>
+      </div>
+    </details>
   `;
 }
 
@@ -1032,19 +1158,21 @@ function groupByModel(items) {
   return Array.from(map.entries()).map(([modelId, ids]) => ({ modelId, objectRuntimeIds: Array.from(ids) }));
 }
 
-function updateValueSummary(objects, checked, passed, failed, noKnown) {
+function updateValueSummary(objects, checked, passed, failed, noKnown, ignored = 0) {
   document.getElementById("vObjects").textContent = objects;
   document.getElementById("vChecked").textContent = checked;
   document.getElementById("vPassed").textContent = passed;
   document.getElementById("vFailed").textContent = failed;
+  document.getElementById("vIgnored").textContent = ignored;
   document.getElementById("vNoKnown").textContent = noKnown;
 }
 
-function updateSetSummary(objects, allRequired, missingRequired, onlyRequired, noKnown) {
+function updateSetSummary(objects, allRequired, missingRequired, onlyRequired, noKnown, ignored = 0) {
   document.getElementById("sObjects").textContent = objects;
   document.getElementById("sAllRequired").textContent = allRequired;
   document.getElementById("sMissingRequired").textContent = missingRequired;
   document.getElementById("sOnlyRequired").textContent = onlyRequired;
+  document.getElementById("sIgnored").textContent = ignored;
   document.getElementById("sNoKnown").textContent = noKnown;
 }
 
