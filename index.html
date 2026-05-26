@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v9</title>
+  <title>Attribute Checker v10</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -42,6 +42,8 @@
     .good{ color:var(--good); } .bad{ color:var(--danger); } .warn{ color:var(--warning); } .info{ color:var(--info); }
     details { border:1px solid var(--border); border-radius:8px; margin:8px 0; background:#f8fafc; }
     summary { cursor:pointer; padding:9px; font-weight:bold; }
+    details.ignore-settings { background:#ffffff; border-style:dashed; }
+    details.ignore-settings summary { font-size:13px; color:#334155; }
     details.model > summary { background:#f1f5f9; }
     details.object { margin-left:26px; background:#fff; }
     details.object > summary { font-weight:normal; }
@@ -77,13 +79,16 @@
       Rules are loaded automatically from <b>rules.json</b> in the same GitHub Pages folder. Attribute set lists in the second tab come from that JSON file.
     </div>
 
-    <div style="margin-top:10px;">
-      <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
-      <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM" />
-      <div class="hint">
-        Separate values with commas. These objects are skipped before checking. Add more here if you find more non-physical/container types causing false errors.
+    <details class="ignore-settings" style="margin-top:10px;">
+      <summary>Advanced: ignored object types</summary>
+      <div class="detail-body">
+        <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
+        <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM" />
+        <div class="hint">
+          Separate values with commas. These objects are skipped before checking. Add more here if you find more non-physical/container types causing false errors.
+        </div>
       </div>
-    </div>
+    </details>
 
     <div id="status" class="status">Starting extension...</div>
     <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
