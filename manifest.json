@@ -1,5 +1,5 @@
 {
-  "title": "Attribute Checker v13b",
+  "title": "Attribute Checker",
   "url": "https://jagkr1.github.io/trimble-attribute-checker/index.html?v=20",
   "description": "Checks attribute values and required attribute sets for loaded Trimble Connect viewer objects.",
   "enabled": true
