@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v18</title>
+  <title>Attribute Checker v20</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -120,7 +120,7 @@
     <div class="panel">
       <div class="buttons">
         <button onclick="runValueScan()">Run value scan</button>
-        <button class="secondary" onclick="showOnlyValueFailures()">Show only failed objects</button>
+        <button class="secondary" onclick="showOnlyValueFailures()">Hide passed objects</button>
         <button class="secondary" onclick="exportValueCsv()">Export value report CSV</button>
       </div>
       <div class="hint">
@@ -161,7 +161,7 @@
         <button class="secondary" onclick="selectAllRequiredSets()">Select all</button>
         <button class="secondary" onclick="clearRequiredSets()">Select none</button>
         <button onclick="runSetScan()">Run attribute set scan</button>
-        <button class="secondary" onclick="showOnlySetProblems()">Show only objects missing required sets</button>
+        <button class="secondary" onclick="showOnlySetProblems()">Hide objects with required sets</button>
         <button class="secondary" onclick="exportSetCsv()">Export set report CSV</button>
       </div>
       <div class="hint">
@@ -219,7 +219,7 @@ function emptyValueData() {
 }
 
 function emptySetData() {
-  return { allGroups: [], missingItems: [], onlyRequiredItems: [], ignoredItems: [], reportByModel: new Map(), csvRows: [] };
+  return { allGroups: [], missingItems: [], allRequiredItems: [], onlyRequiredItems: [], ignoredItems: [], reportByModel: new Map(), csvRows: [] };
 }
 
 async function init() {
@@ -1098,7 +1098,11 @@ async function runSetScan() {
               "missing_required_sets", missingSets.join(" | "), detectedSets.join(" | ")
             ]);
           } else {
-            if (requiredSets.length > 0) hasAllRequired++;
+            if (requiredSets.length > 0) {
+              hasAllRequired++;
+              const passItem = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets };
+              setData.allRequiredItems.push(passItem);
+            }
           }
 
           if (requiredSets.length > 0 && missingSets.length === 0 && extraSets.length === 0) {
@@ -1626,43 +1630,125 @@ async function selectOneObject(modelId, objectId) {
   }
 }
 
+function subtractItemsFromGroups(allGroups, keepItems) {
+  const keepByModel = new Map();
+
+  keepItems.forEach(item => {
+    const key = String(item.modelId);
+    if (!keepByModel.has(key)) keepByModel.set(key, new Set());
+    keepByModel.get(key).add(Number(item.objectRuntimeId));
+  });
+
+  return allGroups.map(group => {
+    const keepSet = keepByModel.get(String(group.modelId)) || new Set();
+    const hideIds = group.objectRuntimeIds
+      .map(Number)
+      .filter(id => Number.isFinite(id) && !keepSet.has(id));
+
+    return {
+      modelId: group.modelId,
+      objectRuntimeIds: hideIds
+    };
+  }).filter(group => group.objectRuntimeIds.length > 0);
+}
+
+function chunkArray(array, size) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) chunks.push(array.slice(i, i + size));
+  return chunks;
+}
+
+async function setVisibilityForGroupsBatched(groups, visible, label) {
+  const objectBatchSize = 250;
+  let total = groups.reduce((sum, group) => sum + group.objectRuntimeIds.length, 0);
+  let done = 0;
+
+  for (const group of groups) {
+    const chunks = chunkArray(group.objectRuntimeIds, objectBatchSize);
+
+    for (const ids of chunks) {
+      await API.viewer.setObjectState(
+        { modelObjectIds: [{ modelId: group.modelId, objectRuntimeIds: ids }] },
+        { visible }
+      );
+
+      done += ids.length;
+      setStatus(label + "\nProcessed visibility for " + done + " of " + total + " objects.");
+      await pause(25);
+    }
+  }
+}
+
+async function hideItemsSafely(itemsToHide, label) {
+  if (!itemsToHide.length) {
+    setStatus("No passing objects found to hide for: " + label);
+    return;
+  }
+
+  const hideByModel = new Map();
+  itemsToHide.forEach(item => {
+    const key = String(item.modelId);
+    if (!hideByModel.has(key)) hideByModel.set(key, []);
+    hideByModel.get(key).push(Number(item.objectRuntimeId));
+  });
+
+  const hideGroups = Array.from(hideByModel.entries()).map(([modelId, ids]) => ({
+    modelId,
+    objectRuntimeIds: ids.filter(id => Number.isFinite(id))
+  })).filter(group => group.objectRuntimeIds.length > 0);
+
+  const hideCount = hideGroups.reduce((sum, group) => sum + group.objectRuntimeIds.length, 0);
+
+  if (!confirm(
+    "This will hide " + hideCount + " object(s) that passed the check.\n\n" +
+    "Objects that failed, objects with no known set, and ignored container/root objects will not be hidden by this command.\n\n" +
+    "Continue?"
+  )) {
+    return;
+  }
+
+  setProgress(0);
+  setStatus("Preparing to hide passing objects for " + label + "...");
+
+  // Important:
+  // Do NOT hide everything first. In some models, hiding parent/root/container
+  // objects can also hide the failed child objects. We only hide confirmed
+  // passing objects and leave the rest untouched.
+  await setVisibilityForGroupsBatched(hideGroups, false, "Hiding passing objects for " + label + "...");
+
+  setProgress(100);
+  setStatus(
+    "Done. Hidden passing objects for " + label + ".\n\n" +
+    "If some non-problem container/root objects remain visible, that is intentional. It avoids hiding failed objects through their parent hierarchy."
+  );
+}
+
+
 async function showOnlyValueFailures() {
   try {
     ensureReady();
     if (!valueData.failItems.length) return setStatus("No failed value-check objects to show.");
-    await showAllObjects();
-    await API.viewer.setObjectState(
-      { modelObjectIds: valueData.allGroups.map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
-      { visible: false }
-    );
-    await API.viewer.setObjectState(
-      { modelObjectIds: groupByModel(valueData.failItems).map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
-      { visible: true }
-    );
-    setStatus("Showing only failed value-check objects.");
+    if (!valueData.passItems.length) return setStatus("No passed value-check objects found to hide. Run the value scan first.");
+
+    await hideItemsSafely(valueData.passItems, "failed value-check objects");
   } catch (error) {
-    setStatus("Could not show only failed objects.\n\n" + errorMessage(error));
+    setStatus("Could not hide passing value-check objects.\n\n" + errorMessage(error));
   }
 }
+
 
 async function showOnlySetProblems() {
   try {
     ensureReady();
     if (!setData.missingItems.length) return setStatus("No objects missing required sets to show.");
-    await showAllObjects();
-    await API.viewer.setObjectState(
-      { modelObjectIds: setData.allGroups.map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
-      { visible: false }
-    );
-    await API.viewer.setObjectState(
-      { modelObjectIds: groupByModel(setData.missingItems).map(g => ({ modelId: g.modelId, objectRuntimeIds: g.objectRuntimeIds })) },
-      { visible: true }
-    );
-    setStatus("Showing only objects missing required sets.");
+    if (!setData.allRequiredItems.length) return setStatus("No objects with all required sets found to hide. Run the set scan first.");
+
+    await hideItemsSafely(setData.allRequiredItems, "objects missing required sets");
   } catch (error) {
-    setStatus("Could not show set problem objects.\n\n" + errorMessage(error));
+    setStatus("Could not hide objects that passed the required-set check.\n\n" + errorMessage(error));
   }
 }
+
 
 async function showAllObjects() {
   try {
