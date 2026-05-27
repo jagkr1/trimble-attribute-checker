@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v21</title>
+  <title>Attribute Checker v22</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -60,6 +60,10 @@
     .small-text { font-size:12px; color:var(--muted); }
     .pill { display:inline-block; border-radius:999px; padding:3px 7px; background:#e2e8f0; color:#334155; font-size:11px; margin:2px; }
     @media (max-width:900px) { .summary{grid-template-columns:repeat(2,1fr);} .two-col{grid-template-columns:1fr;} }
+      details.model-group { background:#ffffff; border:2px solid var(--border); margin:12px 0; }
+    details.model-group > summary { background:#eef2f7; font-size:15px; }
+    details.model { margin-left:14px; }
+    .badge.good { background:#059669; }
   </style>
 </head>
 <body>
@@ -1197,62 +1201,124 @@ function renderSetReport(requiredSets) {
     return;
   }
 
-  for (const [, model] of setData.reportByModel) {
-    const details = document.createElement("details");
-    details.className = "model";
+  const models = Array.from(setData.reportByModel.values())
+    .sort((a,b) => a.modelName.localeCompare(b.modelName));
 
-    const setCountRows = Array.from(model.setCounts.entries())
-      .sort((a,b) => a[0].localeCompare(b[0]))
-      .map(([setName, count]) => `<tr><td>${escapeHtml(setName)}</td><td>${count}</td></tr>`)
-      .join("");
+  // Pass/fail rule requested:
+  // PASS = 0 missing required and 0 no known set.
+  // "Only required sets" is warning/information only.
+  // Ignored objects do not affect pass/fail.
+  const failedModels = models.filter(model => model.missingObjects.length > 0 || model.noKnownObjects.length > 0);
+  const passedModels = models.filter(model => model.missingObjects.length === 0 && model.noKnownObjects.length === 0);
 
-    const missingText = requiredSets.length ? `${model.missingObjects.length} missing required` : "inventory mode";
-    const onlyRequiredBlock = requiredSets.length
-      ? renderObjectList("Objects with only required sets", model.onlyRequiredObjects, "blue")
-      : `<div class="hint">No required sets were selected, so "only required sets" is not shown.</div>`;
+  container.innerHTML = `
+    <h3>Attribute set report by model</h3>
+    <div class="hint">
+      Model pass/fail rule: <b>PASS</b> means <b>0 missing required</b> and <b>0 no known set</b>.
+      <b>Only required sets</b> is shown as a warning/information item, not as a fail condition.
+      Ignored objects do not affect pass/fail.
+    </div>
+    ${renderSetModelGroup("Models with problems", failedModels, requiredSets, "red", true)}
+    ${renderSetModelGroup("Models passed", passedModels, requiredSets, "good", false)}
+  `;
+}
 
-    details.innerHTML = `
-      <summary>${escapeHtml(model.modelName)}
+function renderSetModelGroup(title, models, requiredSets, badgeClass, openByDefault) {
+  const totalObjects = models.reduce((sum, model) => sum + model.objectsChecked, 0);
+  const totalMissing = models.reduce((sum, model) => sum + model.missingObjects.length, 0);
+  const totalNoKnown = models.reduce((sum, model) => sum + model.noKnownObjects.length, 0);
+  const totalOnlyRequired = models.reduce((sum, model) => sum + model.onlyRequiredObjects.length, 0);
+  const totalIgnored = models.reduce((sum, model) => sum + model.ignoredObjects.length, 0);
+
+  return `
+    <details class="model-group" ${openByDefault ? "open" : ""}>
+      <summary>
+        ${escapeHtml(title)}
+        <span class="badge ${badgeClass}">${models.length} model(s)</span>
+        <span class="badge blue">${totalObjects} checked object(s)</span>
+        <span class="badge red">${totalMissing} missing required</span>
+        <span class="badge orange">${totalNoKnown} no known set</span>
+        <span class="badge orange">${totalOnlyRequired} only required set(s)</span>
+        <span class="badge blue">${totalIgnored} ignored</span>
+      </summary>
+      <div class="detail-body">
+        ${models.length ? models.map(model => renderOneSetModel(model, requiredSets)).join("") : `<div class="hint">None.</div>`}
+      </div>
+    </details>
+  `;
+}
+
+function renderOneSetModel(model, requiredSets) {
+  const hasProblems = model.missingObjects.length > 0 || model.noKnownObjects.length > 0;
+  const statusBadge = hasProblems
+    ? `<span class="badge red">FAIL</span>`
+    : `<span class="badge good">PASS</span>`;
+
+  const onlyRequiredBadge = model.onlyRequiredObjects.length
+    ? `<span class="badge orange">${model.onlyRequiredObjects.length} only required set(s)</span>`
+    : `<span class="badge orange">0 only required set(s)</span>`;
+
+  const setCountRows = Array.from(model.setCounts.entries())
+    .sort((a,b) => a[0].localeCompare(b[0]))
+    .map(([setName, count]) => `<tr><td>${escapeHtml(setName)}</td><td>${count}</td></tr>`)
+    .join("");
+
+  const onlyRequiredSection = requiredSets.length
+    ? renderObjectList("Objects with only required sets", model.onlyRequiredObjects, "orange")
+    : `<h4>Objects with only required sets</h4><div class="hint">No required sets were selected, so "only required sets" is not shown.</div>`;
+
+  return `
+    <details class="model">
+      <summary>
+        ${escapeHtml(model.modelName)}
+        ${statusBadge}
         <span class="badge blue">${model.objectsChecked} object(s)</span>
-        <span class="badge red">${escapeHtml(missingText)}</span>
-        ${requiredSets.length ? `<span class="badge orange">${model.onlyRequiredObjects.length} only required set(s)</span>` : ""}
+        <span class="badge red">${model.missingObjects.length} missing required</span>
         <span class="badge orange">${model.noKnownObjects.length} no known set</span>
+        ${onlyRequiredBadge}
         <span class="badge blue">${model.ignoredObjects.length} ignored</span>
       </summary>
       <div class="detail-body">
         <h4>Detected set counts</h4>
         <table>
           <thead><tr><th>Attribute set</th><th>Objects with this set</th></tr></thead>
-          <tbody>${setCountRows || `<tr><td colspan="2">No known sets detected.</td></tr>`}</tbody>
+          <tbody>
+            ${setCountRows || `<tr><td colspan="2">No known sets detected.</td></tr>`}
+          </tbody>
         </table>
-        ${requiredSets.length ? renderMissingList(model.missingObjects) : ""}
-        ${onlyRequiredBlock}
+
+        ${renderMissingList(model.missingObjects)}
+        ${onlyRequiredSection}
         ${renderIgnoredList(model.ignoredObjects)}
         ${renderObjectList("Objects with no known set", model.noKnownObjects, "orange")}
       </div>
-    `;
-    container.appendChild(details);
-  }
+    </details>
+  `;
 }
 
 function renderMissingList(items) {
   if (!items.length) return `<h4>Objects missing required sets</h4><div class="hint">None.</div>`;
 
   return `
-    <h4>Objects missing required sets</h4>
-    <table>
-      <thead><tr><th>Object</th><th>Missing sets</th><th>Detected sets</th><th>Action</th></tr></thead>
-      <tbody>
-        ${items.map(item => `
-          <tr>
-            <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}${item.commonType ? " | Common Type: " + escapeHtml(item.commonType) : ""}</span></td>
-            <td class="problem">${escapeHtml(item.missingSets.join(", "))}</td>
-            <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
-            <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
+    <details class="object" open>
+      <summary>Objects missing required sets <span class="badge red">${items.length}</span></summary>
+      <div class="detail-body">
+        <table>
+          <thead><tr><th>Object</th><th>Missing sets</th><th>Detected sets</th><th>Action</th></tr></thead>
+          <tbody>
+            ${items.slice(0,500).map(item => `
+              <tr>
+                <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}${item.commonType ? " | Common Type: " + escapeHtml(item.commonType) : ""}</span></td>
+                <td class="problem">${escapeHtml(item.missingSets.join(", "))}</td>
+                <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
+                <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        ${items.length > 500 ? `<div class="hint">Showing first 500 objects. Use CSV export for the full list.</div>` : ""}
+      </div>
+    </details>
   `;
 }
 
@@ -1294,7 +1360,7 @@ function renderObjectList(title, items, badgeColor) {
         <table>
           <thead><tr><th>Object</th><th>Detected sets</th><th>Action</th></tr></thead>
           <tbody>
-            ${items.slice(0, 500).map(item => `
+            ${items.slice(0,500).map(item => `
               <tr>
                 <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
                 <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
@@ -1308,6 +1374,7 @@ function renderObjectList(title, items, badgeColor) {
     </details>
   `;
 }
+
 
 function detectKnownSets(flat) {
   const keys = Object.keys(flat);
