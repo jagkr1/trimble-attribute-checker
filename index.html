@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v22</title>
+  <title>Attribute Checker v24</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -64,6 +64,44 @@
     details.model-group > summary { background:#eef2f7; font-size:15px; }
     details.model { margin-left:14px; }
     .badge.good { background:#059669; }
+  
+    .report-summary {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .report-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: bold;
+    }
+    .report-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      align-items: center;
+    }
+    .model-name {
+      padding-left: 2px;
+    }
+    @media (max-width: 900px) {
+      .report-summary {
+        grid-template-columns: 1fr;
+      }
+      .report-tags {
+        justify-content: flex-start;
+      }
+      .report-name {
+        white-space: normal;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1212,7 +1250,6 @@ function renderSetReport(requiredSets) {
   const passedModels = models.filter(model => model.missingObjects.length === 0 && model.noKnownObjects.length === 0);
 
   container.innerHTML = `
-    <h3>Attribute set report by model</h3>
     <div class="hint">
       Model pass/fail rule: <b>PASS</b> means <b>0 missing required</b> and <b>0 no known set</b>.
       <b>Only required sets</b> is shown as a warning/information item, not as a fail condition.
@@ -1232,14 +1269,16 @@ function renderSetModelGroup(title, models, requiredSets, badgeClass, openByDefa
 
   return `
     <details class="model-group" ${openByDefault ? "open" : ""}>
-      <summary>
-        ${escapeHtml(title)}
-        <span class="badge ${badgeClass}">${models.length} model(s)</span>
-        <span class="badge blue">${totalObjects} checked object(s)</span>
-        <span class="badge red">${totalMissing} missing required</span>
-        <span class="badge orange">${totalNoKnown} no known set</span>
-        <span class="badge orange">${totalOnlyRequired} only required set(s)</span>
-        <span class="badge blue">${totalIgnored} ignored</span>
+      <summary class="report-summary">
+        <span class="report-name">${escapeHtml(title)}</span>
+        <span class="report-tags">
+          <span class="badge ${badgeClass}">${models.length} model(s)</span>
+          <span class="badge blue">${totalObjects} checked object(s)</span>
+          <span class="badge red">${totalMissing} missing required</span>
+          <span class="badge orange">${totalNoKnown} no known set</span>
+          <span class="badge orange">${totalOnlyRequired} only required set(s)</span>
+          <span class="badge blue">${totalIgnored} ignored</span>
+        </span>
       </summary>
       <div class="detail-body">
         ${models.length ? models.map(model => renderOneSetModel(model, requiredSets)).join("") : `<div class="hint">None.</div>`}
@@ -1269,14 +1308,16 @@ function renderOneSetModel(model, requiredSets) {
 
   return `
     <details class="model">
-      <summary>
-        ${escapeHtml(model.modelName)}
-        ${statusBadge}
-        <span class="badge blue">${model.objectsChecked} object(s)</span>
-        <span class="badge red">${model.missingObjects.length} missing required</span>
-        <span class="badge orange">${model.noKnownObjects.length} no known set</span>
-        ${onlyRequiredBadge}
-        <span class="badge blue">${model.ignoredObjects.length} ignored</span>
+      <summary class="report-summary model-summary-row">
+        <span class="report-name model-name">${escapeHtml(model.modelName)}</span>
+        <span class="report-tags">
+          ${statusBadge}
+          <span class="badge blue">${model.objectsChecked} object(s)</span>
+          <span class="badge red">${model.missingObjects.length} missing required</span>
+          <span class="badge orange">${model.noKnownObjects.length} no known set</span>
+          ${onlyRequiredBadge}
+          <span class="badge blue">${model.ignoredObjects.length} ignored</span>
+        </span>
       </summary>
       <div class="detail-body">
         <h4>Detected set counts</h4>
