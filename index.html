@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v20</title>
+  <title>Attribute Checker v21</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -92,9 +92,9 @@
         <div style="height:8px;"></div>
 
         <label for="ignoredPathKeywords">Ignore objects with these property group/path keywords</label>
-        <input id="ignoredPathKeywords" type="text" value="Ifc Project, Project, Ifc Site, Ifc Building, Ifc Building Storey" />
+        <input id="ignoredPathKeywords" type="text" value="Ifc Project, Ifc Site, Ifc Building, Ifc Building Storey" />
         <div class="hint">
-          Separate values with commas. This is a fallback for hierarchy/container objects where Trimble shows groups such as Ifc Building Storey, but the API does not return Common Type clearly.
+          Separate values with commas. Generic container names such as Ifc Building now match exact group/type names only, so IfcBuildingElementProxy is not ignored just because it contains the word Building.
         </div>
 
         <div style="height:8px;"></div>
@@ -519,21 +519,40 @@ function getPropertyPathKeywordMatch(flat, raw = null) {
     const candidate = normalizeKeyword(candidateText);
     if (!candidate || !keyword) return false;
 
-    // Generic short words like "project" are risky as contains-matches because
-    // many normal objects can have project metadata. For these, require exact
-    // group/name match or IFC-prefixed match.
-    const generic = ["project", "site", "building", "beam", "slab"];
-    if (generic.includes(keyword)) {
-      return candidate === keyword || candidate === "ifc" + keyword;
+    // IMPORTANT:
+    // Do not allow generic container words to match as "contains".
+    // Example:
+    //   IfcBuildingElementProxyType.Name
+    // contains "IfcBuilding", but it is a real object type and should NOT be ignored.
+    //
+    // For generic container concepts, only accept exact group/type matches.
+    const exactOnly = ["project", "site", "building", "buildingstorey", "beam", "slab", "ifcproject", "ifcsite", "ifcbuilding", "ifcbuildingstorey"];
+    if (exactOnly.includes(keyword)) {
+      return candidate === keyword;
     }
 
-    // More specific keywords like ifcbuildingstorey can safely use contains.
+    // For more specific keywords entered by the user, allow contains matching.
+    // Example: "ifcbuildingstoreycompositiontype" can match a longer path.
     return candidate.includes(keyword);
   }
 
   const flatKeys = Object.keys(flat || {});
   for (const key of flatKeys) {
-    const matched = ignoredKeywords.find(keyword => keywordMatches(key, keyword));
+    const normalizedKey = normalizeKeyword(key);
+
+    // Check both the full path and each path part separately.
+    // This makes "Ifc Building Storey" match the exact path part "IfcBuildingStorey",
+    // but prevents it from matching "IfcBuildingElementProxyType".
+    const parts = String(key)
+      .split(/[.\[/\]>{}:|]+/g)
+      .map(part => normalizeKeyword(part))
+      .filter(Boolean);
+
+    const matched = ignoredKeywords.find(keyword => {
+      if (keywordMatches(normalizedKey, keyword) && !["ifcbuilding", "building"].includes(keyword)) return true;
+      return parts.some(part => keywordMatches(part, keyword));
+    });
+
     if (matched) return key;
   }
 
@@ -596,7 +615,7 @@ function getPropertyPathKeywordMatch(flat, raw = null) {
 
   collectNamesAndValues(raw);
 
-  // Check property group/name candidates.
+  // Check raw property/group/type names exactly for generic container keywords.
   for (const name of rawNames) {
     const matched = ignoredKeywords.find(keyword => keywordMatches(name, keyword));
     if (matched) return name;
