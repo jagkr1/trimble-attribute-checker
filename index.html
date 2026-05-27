@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v25</title>
+  <title>Attribute Checker v26</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -145,9 +145,106 @@
       overflow:auto;
     }
 
+  
+    body.theme-dark {
+      --bg:#0f172a;
+      --panel:#111827;
+      --panel-2:#1e293b;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --border:#334155;
+      --input:#0b1220;
+      --input-border:#475569;
+      background:#0f172a;
+      color:#e5e7eb;
+    }
+    body.theme-dark .panel,
+    body.theme-dark .card,
+    body.theme-dark details,
+    body.theme-dark .admin-panel,
+    body.theme-dark details.ignore-settings,
+    body.theme-dark details.model-group,
+    body.theme-dark .visible-status {
+      background:#111827;
+      color:#e5e7eb;
+      border-color:#334155;
+    }
+    body.theme-dark details.model-group > summary,
+    body.theme-dark summary,
+    body.theme-dark .tab.active {
+      background:#1e293b;
+      color:#e5e7eb;
+    }
+    body.theme-dark .tab {
+      background:#0b1220;
+      color:#cbd5e1;
+      border-color:#334155;
+    }
+    body.theme-dark input,
+    body.theme-dark select,
+    body.theme-dark textarea {
+      background:#0b1220;
+      color:#e5e7eb;
+      border-color:#475569;
+    }
+    body.theme-dark table {
+      background:#111827;
+      color:#e5e7eb;
+    }
+    body.theme-dark th {
+      background:#1e293b;
+      color:#e5e7eb;
+      border-color:#334155;
+    }
+    body.theme-dark td {
+      border-color:#334155;
+    }
+    body.theme-dark .hint,
+    body.theme-dark .small-text {
+      color:#94a3b8;
+    }
+    body.theme-dark .status {
+      background:#0b1220;
+      color:#e5e7eb;
+      border-color:#334155;
+    }
+    body.theme-dark button.btn-secondary,
+    body.theme-dark button.btn-admin {
+      background:#cbd5e1;
+      color:#0f172a;
+    }
+    .theme-toggle-row {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin:8px 0 12px 0;
+    }
+    .theme-pill {
+      display:inline-block;
+      padding:5px 8px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .scroll-table {
+      max-height:350px;
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:8px;
+      margin-top:8px;
+    }
+    .scroll-table table { margin:0; }
+    .scroll-table th {
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
   </style>
 </head>
-<body>
+<body class="theme-dark">
 <header>
   <h1>Attribute Checker</h1>
   <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer. Includes ignored object filtering.</p>
@@ -173,6 +270,19 @@
         <div class="button-row">
           <button class="btn-admin" onclick="loadRules()">Reload rules manually</button>
           <button class="btn-admin" onclick="debugSelectedCommonType()">Debug selected Common Type</button>
+        </div>
+
+        <div class="theme-toggle-row">
+          <button class="btn-admin" onclick="toggleTheme()">Toggle dark/light theme</button>
+          <span id="themeStatus" class="theme-pill">Theme: dark</span>
+        </div>
+
+        <label class="check-item" style="margin-top:8px; max-width:720px; font-weight:normal;">
+          <input id="skipNoKnownAsMissing" type="checkbox">
+          <span>Report no-known-set objects separately only</span>
+        </label>
+        <div class="hint">
+          Default OFF. When OFF, no-known-set objects are treated as missing required sets when required sets are selected. They always keep the model in FAIL because they are still a QA issue.
         </div>
 
         <details class="ignore-settings" style="margin-top:10px;">
@@ -268,13 +378,6 @@
         Choose which sets are required for this scan. Selecting zero required sets is allowed and works as inventory mode: it only counts which sets exist on objects.
       </div>
 
-      <label class="check-item" style="margin-top:8px; max-width:520px; font-weight:normal;">
-        <input id="skipNoKnownAsMissing" type="checkbox" checked>
-        <span>Do not count objects with no known attribute set as missing required sets</span>
-      </label>
-      <div class="hint">
-        Recommended ON. These objects are still counted under "No known set", but they are not treated as failed/missing. Turn OFF only if you want a strict check where objects with no recognized sets fail the required-set check.
-      </div>
 
       <div id="setCheckboxes" class="set-grid"></div>
     </div>
@@ -312,6 +415,7 @@ let modelNameById = new Map();
 let valueData = emptyValueData();
 let setData = emptySetData();
 
+loadThemePreference();
 init();
 
 function emptyValueData() {
@@ -320,6 +424,27 @@ function emptyValueData() {
 
 function emptySetData() {
   return { allGroups: [], missingItems: [], allRequiredItems: [], onlyRequiredItems: [], ignoredItems: [], reportByModel: new Map(), csvRows: [] };
+}
+
+function applyTheme(theme) {
+  const actualTheme = theme === "light" ? "light" : "dark";
+  document.body.classList.toggle("theme-dark", actualTheme === "dark");
+  document.body.classList.toggle("theme-light", actualTheme === "light");
+  try { localStorage.setItem("attributeCheckerTheme", actualTheme); } catch (e) {}
+
+  const el = document.getElementById("themeStatus");
+  if (el) el.textContent = "Theme: " + actualTheme;
+}
+
+function loadThemePreference() {
+  let saved = "dark";
+  try { saved = localStorage.getItem("attributeCheckerTheme") || "dark"; } catch (e) {}
+  applyTheme(saved);
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.contains("theme-dark");
+  applyTheme(isDark ? "light" : "dark");
 }
 
 async function init() {
@@ -423,7 +548,7 @@ function getRequiredSets() {
 
 function getSkipNoKnownAsMissing() {
   const input = document.getElementById("skipNoKnownAsMissing");
-  return input ? input.checked : true;
+  return input ? input.checked : false;
 }
 
 function getIgnoredCommonTypes() {
@@ -1200,7 +1325,7 @@ async function runSetScan() {
               "no_known_set", "", ""
             ]);
 
-            if (skipNoKnownAsMissing) {
+            if (requiredSets.length === 0 || skipNoKnownAsMissing) {
               setProgress((processed / totalObjects) * 100);
               continue;
             }
@@ -1257,7 +1382,7 @@ async function runSetScan() {
     setStatus(
       "Attribute set scan complete.\n" +
       "Required sets selected: " + (requiredSets.length ? requiredSets.join(", ") : "none - inventory mode") + "\n" +
-      "No-known-set objects counted as missing: " + (skipNoKnownAsMissing ? "NO" : "YES") + "\n" +
+      "No-known-set objects reported separately only: " + (skipNoKnownAsMissing ? "YES" : "NO") + "\n" +
       "Objects found: " + totalObjects + "\n" +
       "Missing required sets: " + missingRequired + "\n" +
       "Objects with only required sets: " + onlyRequired + "\n" +
@@ -1369,12 +1494,12 @@ function renderOneSetModel(model, requiredSets) {
       <summary class="report-summary model-summary-row">
         <span class="report-name model-name">${escapeHtml(model.modelName)}</span>
         <span class="report-tags">
-          ${statusBadge}
           <span class="badge blue">${model.objectsChecked} object(s)</span>
           <span class="badge red">${model.missingObjects.length} missing required</span>
           <span class="badge orange">${model.noKnownObjects.length} no known set</span>
           ${onlyRequiredBadge}
           <span class="badge blue">${model.ignoredObjects.length} ignored</span>
+          ${statusBadge}
         </span>
       </summary>
       <div class="detail-body">
@@ -1430,24 +1555,44 @@ function renderIgnoredList(items) {
     counts.set(label, (counts.get(label) || 0) + 1);
   });
 
-  const rows = Array.from(counts.entries())
+  const reasonRows = Array.from(counts.entries())
     .sort((a,b) => a[0].localeCompare(b[0]))
     .map(([reason, count]) => `<tr><td>${escapeHtml(reason)}</td><td>${count}</td></tr>`)
     .join("");
+
+  const objectRows = items.map(item => `
+    <tr>
+      <td>${escapeHtml(item.identity ? item.identity.label : "Object " + item.objectRuntimeId)}<br><span class="small-text">${escapeHtml(item.identity ? item.identity.description : "")}</span></td>
+      <td>${escapeHtml(item.reason || item.commonType || "-")}</td>
+      <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
+    </tr>
+  `).join("");
 
   return `
     <details class="object">
       <summary>Objects ignored by filter <span class="badge blue">${items.length}</span></summary>
       <div class="detail-body">
+        <h4>Summary by ignore reason</h4>
         <table>
           <thead><tr><th>Ignore reason</th><th>Ignored objects</th></tr></thead>
-          <tbody>${rows}</tbody>
+          <tbody>${reasonRows}</tbody>
         </table>
+
+        <h4>Ignored object list</h4>
+        <div class="hint">Showing all ${items.length} ignored object(s). Use the scroll box if the list is long.</div>
+        <div class="${items.length > 100 ? "scroll-table" : ""}">
+          <table>
+            <thead><tr><th>Object</th><th>Ignore reason</th><th>Action</th></tr></thead>
+            <tbody>${objectRows}</tbody>
+          </table>
+        </div>
+
         <div class="hint">These objects were skipped before checking because they matched the ignored Common Type list, ignored property group/path keyword list, or ignored Product/root name list.</div>
       </div>
     </details>
   `;
 }
+
 
 function renderObjectList(title, items, badgeColor) {
   if (!items.length) return `<h4>${escapeHtml(title)}</h4><div class="hint">None.</div>`;
