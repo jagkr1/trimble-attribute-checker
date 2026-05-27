@@ -1,242 +1,233 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v27</title>
+  <title>Attribute Checker v28</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
-
   <style>
     :root {
+      --bg:#f4f6f8; --panel:#fff; --border:#d7dde4; --text:#111827; --muted:#6b7280;
+      --primary:#1f6feb; --primary-dark:#174ea6; --secondary:#475569; --danger:#dc2626;
+      --warning:#f59e0b; --good:#16a34a; --info:#0ea5e9;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
+    header { background:#111827; color:#fff; padding:14px 16px; }
+    header h1 { margin:0; font-size:18px; }
+    header p { margin:5px 0 0; color:#cbd5e1; font-size:12px; }
+    main { padding:12px; max-width:1220px; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:12px; }
+    .buttons { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    button { border:0; border-radius:7px; padding:8px 10px; background:var(--primary); color:#fff; cursor:pointer; font-size:13px; }
+    button:hover { background:var(--primary-dark); }
+    button.secondary { background:var(--secondary); }
+    button.secondary:hover { background:#334155; }
+    button.danger { background:var(--danger); }
+    button.small { padding:5px 8px; font-size:12px; }
+    select, input[type="text"], input[type="number"] { border:1px solid var(--border); border-radius:7px; padding:7px; font-size:13px; background:white; }
+    label { font-weight:bold; display:block; margin-bottom:4px; font-size:12px; color:#374151; }
+    .hint { font-size:12px; color:var(--muted); line-height:1.4; margin-top:7px; }
+    .status { padding:9px; border-radius:7px; border:1px solid var(--border); background:#f8fafc; color:var(--muted); white-space:pre-wrap; font-size:12px; line-height:1.4; margin-top:10px; }
+    .progress-wrap { height:8px; background:#e5e7eb; border-radius:999px; margin-top:10px; overflow:hidden; }
+    .progress-bar { height:100%; width:0%; background:var(--primary); transition:width .2s; }
+    .tabs { display:flex; gap:6px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+    .tab-button { background:#e5e7eb; color:#111827; border-radius:8px 8px 0 0; padding:9px 12px; }
+    .tab-button.active { background:var(--primary); color:white; }
+    .tab { display:none; }
+    .tab.active { display:block; }
+    .summary { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+    .card { border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center; background:#f8fafc; min-height:60px; }
+    .num { font-size:21px; font-weight:bold; margin-bottom:4px; }
+    .good{ color:var(--good); } .bad{ color:var(--danger); } .warn{ color:var(--warning); } .info{ color:var(--info); }
+    details { border:1px solid var(--border); border-radius:8px; margin:8px 0; background:#f8fafc; }
+    summary { cursor:pointer; padding:9px; font-weight:bold; }
+    details.ignore-settings { background:#ffffff; border-style:dashed; }
+    details.ignore-settings summary { font-size:13px; color:#334155; }
+    details.model > summary { background:#f1f5f9; }
+    details.object { margin-left:26px; background:#fff; }
+    details.object > summary { font-weight:normal; }
+    .detail-body { padding:10px; border-top:1px solid var(--border); }
+    .badge { display:inline-block; padding:3px 6px; border-radius:999px; color:white; font-size:11px; margin-left:5px; }
+    .badge.red { background:var(--danger); } .badge.orange { background:var(--warning); color:#111827; } .badge.green { background:var(--good); } .badge.blue { background:#64748b; }
+    table { width:100%; border-collapse:collapse; font-size:12px; background:white; }
+    th,td { border-bottom:1px solid #edf0f3; padding:6px; text-align:left; vertical-align:top; }
+    th { background:#f8fafc; }
+    td.problem { background:#fff7ed; color:#b91c1c; font-weight:bold; }
+    .set-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:6px; margin-top:8px; }
+    .check-item { border:1px solid var(--border); background:#f8fafc; border-radius:7px; padding:7px; display:flex; align-items:center; gap:7px; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .small-text { font-size:12px; color:var(--muted); }
+    .pill { display:inline-block; border-radius:999px; padding:3px 7px; background:#e2e8f0; color:#334155; font-size:11px; margin:2px; }
+    @media (max-width:900px) { .summary{grid-template-columns:repeat(2,1fr);} .two-col{grid-template-columns:1fr;} }
+      details.model-group { background:#ffffff; border:2px solid var(--border); margin:12px 0; }
+    details.model-group > summary { background:#eef2f7; font-size:15px; }
+    details.model { margin-left:14px; }
+    .badge.good { background:#059669; }
+  
+    .report-summary {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .report-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: bold;
+    }
+    .report-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+      align-items: center;
+    }
+    .model-name {
+      padding-left: 2px;
+    }
+    @media (max-width: 900px) {
+      .report-summary {
+        grid-template-columns: 1fr;
+      }
+      .report-tags {
+        justify-content: flex-start;
+      }
+      .report-name {
+        white-space: normal;
+      }
+    }
+
+  
+    .button-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      margin:8px 0;
+    }
+    button.btn-primary { background:#2563eb; color:white; }
+    button.btn-secondary { background:#475569; color:white; }
+    button.btn-export { background:#059669; color:white; }
+    button.btn-visibility { background:#7c3aed; color:white; }
+    button.btn-admin { background:#64748b; color:white; }
+    button.btn-danger { background:#dc2626; color:white; }
+    .visible-status {
+      margin-top:10px;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#f8fafc;
+      color:#334155;
+      white-space:pre-wrap;
+      font-size:13px;
+    }
+    .admin-panel {
+      margin-top:10px;
+      border:1px dashed var(--border);
+      background:#ffffff;
+    }
+    .admin-panel > summary {
+      font-size:14px;
+      color:#1e293b;
+    }
+    .admin-tools-body {
+      padding:10px;
+      border-top:1px solid var(--border);
+    }
+    .admin-tools-body .status {
+      margin-top:10px;
+      max-height:220px;
+      overflow:auto;
+    }
+
+  
+    body.theme-dark {
       --bg:#0f172a;
       --panel:#111827;
-      --panel2:#1e293b;
+      --panel-2:#1e293b;
       --text:#e5e7eb;
       --muted:#94a3b8;
       --border:#334155;
       --input:#0b1220;
-      --blue:#2563eb;
-      --green:#059669;
-      --purple:#7c3aed;
-      --red:#dc2626;
-      --orange:#d97706;
-      --slate:#cbd5e1;
+      --input-border:#475569;
+      background:#0f172a;
+      color:#e5e7eb;
     }
-
-    body.theme-light {
-      --bg:#f3f4f6;
-      --panel:#ffffff;
-      --panel2:#eef2f7;
-      --text:#111827;
-      --muted:#64748b;
-      --border:#cbd5e1;
-      --input:#ffffff;
-      --slate:#475569;
+    body.theme-dark .panel,
+    body.theme-dark .card,
+    body.theme-dark details,
+    body.theme-dark .admin-panel,
+    body.theme-dark details.ignore-settings,
+    body.theme-dark details.model-group,
+    body.theme-dark .visible-status {
+      background:#111827;
+      color:#e5e7eb;
+      border-color:#334155;
     }
-
-    body {
-      margin:0;
-      font-family: Arial, sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      font-size:14px;
+    body.theme-dark details.model-group > summary,
+    body.theme-dark summary,
+    body.theme-dark .tab.active {
+      background:#1e293b;
+      color:#e5e7eb;
     }
-
-    header {
-      padding:16px;
-      background:var(--panel);
-      border-bottom:1px solid var(--border);
+    body.theme-dark .tab {
+      background:#0b1220;
+      color:#cbd5e1;
+      border-color:#334155;
     }
-
-    h1 { margin:0 0 4px 0; font-size:20px; }
-    h2, h3, h4 { color:var(--text); }
-    p { color:var(--muted); }
-
-    main { padding:14px; }
-
-    .panel, details {
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:10px;
-      padding:12px;
-      margin-bottom:12px;
+    body.theme-dark input,
+    body.theme-dark select,
+    body.theme-dark textarea {
+      background:#0b1220;
+      color:#e5e7eb;
+      border-color:#475569;
     }
-
-    summary {
-      cursor:pointer;
-      font-weight:bold;
-      color:var(--text);
+    body.theme-dark table {
+      background:#111827;
+      color:#e5e7eb;
     }
-
-    .hint, .small-text {
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.4;
+    body.theme-dark th {
+      background:#1e293b;
+      color:#e5e7eb;
+      border-color:#334155;
     }
-
-    input, textarea, select {
-      background:var(--input);
-      color:var(--text);
-      border:1px solid var(--border);
-      border-radius:6px;
-      padding:8px;
-      box-sizing:border-box;
+    body.theme-dark td {
+      border-color:#334155;
     }
-
-    textarea { width:100%; min-height:72px; resize:vertical; }
-
-    button {
-      border:0;
-      border-radius:7px;
-      padding:9px 11px;
-      cursor:pointer;
-      font-size:13px;
-      color:white;
-      background:var(--blue);
+    body.theme-dark .hint,
+    body.theme-dark .small-text {
+      color:#94a3b8;
     }
-
-    button.small { padding:5px 8px; font-size:12px; }
-    .btn-primary { background:var(--blue); }
-    .btn-export { background:var(--green); }
-    .btn-visibility { background:var(--purple); }
-    .btn-danger { background:var(--red); }
-    .btn-secondary, .btn-admin { background:var(--slate); color:#0f172a; }
-    body.theme-light .btn-secondary, body.theme-light .btn-admin { color:#fff; }
-
-    .button-row, .buttons {
+    body.theme-dark .status {
+      background:#0b1220;
+      color:#e5e7eb;
+      border-color:#334155;
+    }
+    body.theme-dark button.btn-secondary,
+    body.theme-dark button.btn-admin {
+      background:#cbd5e1;
+      color:#0f172a;
+    }
+    .theme-toggle-row {
       display:flex;
+      gap:8px;
       flex-wrap:wrap;
-      gap:8px;
       align-items:center;
-      margin:8px 0;
+      margin:8px 0 12px 0;
     }
-
-    .tabs { display:flex; gap:8px; margin:12px 0; }
-    .tab-button {
-      background:var(--panel);
-      border:1px solid var(--border);
-      color:var(--text);
-    }
-    .tab-button.active { background:var(--blue); color:white; }
-
-    section.tab { display:none; }
-    section.tab.active { display:block; }
-
-    .visible-status, .status {
-      white-space:pre-wrap;
-      padding:10px;
-      border:1px solid var(--border);
-      border-radius:8px;
-      background:var(--input);
-      color:var(--text);
-      font-size:13px;
-    }
-
-    .progress-wrap {
-      height:8px;
-      background:var(--panel2);
-      border-radius:999px;
-      overflow:hidden;
-      margin-top:10px;
-    }
-    .progress-bar {
-      height:100%;
-      width:0%;
-      background:var(--blue);
-      transition:width .15s;
-    }
-
-    .set-grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(210px, 1fr));
-      gap:6px;
-      margin-top:8px;
-    }
-
-    .check-item {
-      display:flex;
-      gap:8px;
-      align-items:center;
-      border:1px solid var(--border);
-      border-radius:7px;
-      padding:8px;
-      background:var(--input);
-    }
-
-    .summary-cards {
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
-      gap:8px;
-      margin:10px 0;
-    }
-
-    .card {
-      border:1px solid var(--border);
-      border-radius:9px;
-      padding:10px;
-      background:var(--input);
-    }
-    .num { font-size:22px; font-weight:bold; }
-    .good { color:#22c55e; }
-    .bad { color:#ef4444; }
-    .warn { color:#f59e0b; }
-    .info { color:#60a5fa; }
-
-    .badge {
+    .theme-pill {
       display:inline-block;
-      padding:4px 7px;
-      border-radius:999px;
-      color:white;
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .badge.blue { background:#64748b; }
-    .badge.green, .badge.good { background:var(--green); }
-    .badge.red { background:var(--red); }
-    .badge.orange { background:var(--orange); }
-
-    .report-summary {
-      display:grid;
-      grid-template-columns:minmax(220px, 1fr) auto;
-      gap:12px;
-      align-items:center;
-      width:100%;
-    }
-    .report-name {
-      min-width:0;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      font-weight:bold;
-    }
-    .report-tags {
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-      gap:6px;
-      align-items:center;
-    }
-
-    details.model-group { border-width:2px; }
-    details.model { margin-left:14px; margin-top:8px; }
-    .detail-body { margin-top:10px; }
-
-    table {
-      width:100%;
-      border-collapse:collapse;
-      margin:8px 0;
-      background:var(--panel);
-      color:var(--text);
-    }
-    th, td {
+      padding:5px 8px;
       border:1px solid var(--border);
-      padding:7px;
-      text-align:left;
-      vertical-align:top;
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
     }
-    th { background:var(--panel2); }
-
-    .problem { color:#f87171; font-weight:bold; }
-
     .scroll-table {
       max-height:350px;
       overflow:auto;
@@ -251,67 +242,82 @@
       z-index:1;
     }
 
-    @media (max-width:900px) {
-      .report-summary { grid-template-columns:1fr; }
-      .report-tags { justify-content:flex-start; }
-      .report-name { white-space:normal; }
-    }
   </style>
 </head>
-
 <body class="theme-dark">
 <header>
   <h1>Attribute Checker</h1>
-  <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer.</p>
+  <p>Checks attribute values and attribute set coverage for objects loaded in the Trimble Connect 3D viewer. Includes ignored object filtering.</p>
 </header>
 
 <main>
   <div class="panel">
-    <div class="button-row">
-      <button class="btn-secondary" onclick="showAllObjects()">Show all objects again</button>
-      <button class="btn-danger" onclick="clearAllReports()">Clear reports</button>
+    <div class="buttons">
+      <div class="button-row">
+        <button class="btn-secondary" onclick="showAllObjects()">Show all objects again</button>
+        <button class="btn-danger" onclick="clearAllReports()">Clear reports</button>
+      </div>
     </div>
-    <div class="hint">Rules are loaded automatically when the extension opens.</div>
+    <div class="hint">
+      Rules are loaded automatically from <b>rules.json</b> in the same GitHub Pages folder. Attribute set lists in the second tab come from that JSON file.
+    </div>
+
     <div id="visibleStatus" class="visible-status">Starting extension...</div>
 
-    <details style="margin-top:10px;">
+    <details class="admin-panel">
       <summary>Admin / setup tools</summary>
-      <div class="detail-body">
+      <div class="admin-tools-body">
         <div class="button-row">
           <button class="btn-admin" onclick="loadRules()">Reload rules manually</button>
-          <button class="btn-admin" onclick="debugSelectedObject()">Debug selected object</button>
-          <button class="btn-admin" onclick="toggleTheme()">Toggle dark/light theme</button>
-          <span id="themeStatus" class="badge blue">Theme: dark</span>
+          <button class="btn-admin" onclick="debugSelectedCommonType()">Debug selected Common Type</button>
         </div>
 
-        <label class="check-item" style="max-width:720px;">
+        <div class="theme-toggle-row">
+          <button class="btn-admin" onclick="toggleTheme()">Toggle dark/light theme</button>
+          <span id="themeStatus" class="theme-pill">Theme: dark</span>
+        </div>
+
+        <label class="check-item" style="margin-top:8px; max-width:720px; font-weight:normal;">
           <input id="skipNoKnownAsMissing" type="checkbox">
           <span>Report no-known-set objects separately only</span>
         </label>
         <div class="hint">
-          Default OFF. When OFF, no-known-set objects are treated as missing required sets when required sets are selected. They always keep the model in FAIL.
+          Default OFF. When OFF, no-known-set objects are treated as missing required sets when required sets are selected. They always keep the model in FAIL because they are still a QA issue.
         </div>
 
-        <details style="margin-top:10px;">
-          <summary>Advanced: ignored object filters</summary>
-          <div class="detail-body">
-            <label>Ignore exact Common Type values</label>
-            <input id="ignoredCommonTypes" style="width:100%;" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM, SLAB" />
-            <div class="hint">Comma-separated exact values.</div>
+        <details class="ignore-settings" style="margin-top:10px;">
+      <summary>Advanced: ignored object types</summary>
+      <div class="detail-body">
+        <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
+        <input id="ignoredCommonTypes" type="text" value="PROJECT, SITE, BUILDING, BUILDINGSTOREY, BEAM, SLAB" />
+        <div class="hint">
+          Separate values with commas. These are skipped if the API returns a readable Common Type value.
+        </div>
 
-            <label>Ignore exact Product/root names</label>
-            <input id="ignoredProductRootNames" style="width:100%;" value="Default Project" />
-            <div class="hint">Used for IFC root/project containers.</div>
-          </div>
-        </details>
+        <div style="height:8px;"></div>
 
-        <details style="margin-top:10px;">
+        <label for="ignoredPathKeywords">Ignore objects with these property group/path keywords</label>
+        <input id="ignoredPathKeywords" type="text" value="Ifc Project, Ifc Site, Ifc Building, Ifc Building Storey" />
+        <div class="hint">
+          Separate values with commas. Generic container names such as Ifc Building now match exact group/type names only, so IfcBuildingElementProxy is not ignored just because it contains the word Building.
+        </div>
+
+        <div style="height:8px;"></div>
+
+        <label for="ignoredProductRootNames">Ignore exact Product/root names</label>
+        <input id="ignoredProductRootNames" type="text" value="Default Project" />
+        <div class="hint">
+          Separate values with commas. This targets root/container objects where Product Name is shown as Default Project in the Trimble property panel.
+        </div>
+      </div>
+    </details>
+
+        <details class="ignore-settings" style="margin-top:10px;">
           <summary>Admin / scan details</summary>
           <div id="status" class="status">Starting extension...</div>
         </details>
       </div>
     </details>
-
     <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
   </div>
 
@@ -322,106 +328,163 @@
 
   <section id="tabValues" class="tab active">
     <div class="panel">
-      <div class="button-row">
-        <button class="btn-primary" onclick="runValueScan()">Run value scan</button>
-        <button class="btn-visibility" onclick="hidePassedValueObjects()">Hide objects that pass value check</button>
+      <div class="buttons">
+        <button onclick="runValueScan()">Run value scan</button>
+        <button class="btn-visibility" onclick="showOnlyValueFailures()">Hide objects that pass value check</button>
         <button class="btn-export" onclick="exportValueCsv()">Export value report CSV</button>
       </div>
-      <div class="hint">Checks attributes and values for the rule sets that exist on each object.</div>
+      <div class="hint">
+        This checks only the rule sets that are actually detected on each object. Objects without any known rule set are listed separately and are not treated as failed.
+      </div>
+      <div style="margin-top:10px; max-width:260px;">
+        <label for="batchSize">Batch size</label>
+        <select id="batchSize">
+          <option value="50">50 objects per batch - safer</option>
+          <option value="100" selected>100 objects per batch - recommended</option>
+          <option value="200">200 objects per batch - faster</option>
+          <option value="500">500 objects per batch - heavy</option>
+        </select>
+      </div>
     </div>
-    <div class="panel"><h3>Value problem report by model</h3><div id="valueReport">No value scan run yet.</div></div>
+
+    <div class="panel">
+      <div class="summary">
+        <div class="card"><div id="vObjects" class="num info">0</div><div>Objects found</div></div>
+        <div class="card"><div id="vChecked" class="num info">0</div><div>Objects checked</div></div>
+        <div class="card"><div id="vPassed" class="num good">0</div><div>Passed</div></div>
+        <div class="card"><div id="vFailed" class="num bad">0</div><div>Failed</div></div>
+        <div class="card"><div id="vIgnored" class="num warn">0</div><div>Ignored by filter</div></div>
+        <div class="card"><div id="vNoKnown" class="num warn">0</div><div>Not checked - no matching set</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-top:0;">Value problem report by model</h3>
+      <div id="valueReport">No value scan run yet.</div>
+    </div>
   </section>
 
   <section id="tabSets" class="tab">
     <div class="panel">
-      <h3>Choose required exact attribute sets</h3>
-      <div class="button-row">
+      <h3 style="margin-top:0;">Choose required attribute sets</h3>
+      <div class="buttons">
         <button class="btn-secondary" onclick="selectAllRequiredSets()">Select all</button>
-        <button class="btn-secondary" onclick="clearRequiredSets()">Select none</button>
+        <button class="secondary" onclick="clearRequiredSets()">Select none</button>
         <button class="btn-primary" onclick="runSetScan()">Run attribute set scan</button>
-        <button class="btn-visibility" onclick="hidePassedSetObjects()">Hide objects that pass set check</button>
+        <button class="btn-visibility" onclick="showOnlySetProblems()">Hide objects that pass set check</button>
         <button class="btn-export" onclick="exportSetCsv()">Export set report CSV</button>
       </div>
-      <div class="hint">Choose exact rule sets from rules.json that are required for this scan.</div>
-      <div id="setCheckboxes" class="set-grid"></div>
-    </div>
-
-    <div class="panel">
-      <h3>Required partial set names</h3>
       <div class="hint">
-        Use this for sets that have many variants, for example <b>7_NVDB</b>. 
-        If an object has <b>7_NVDB_Kabelgrøft_843</b>, it passes the partial requirement <b>7_NVDB</b>.
+        Choose which sets are required for this scan. Selecting zero required sets is allowed and works as inventory mode: it only counts which sets exist on objects.
       </div>
-      <textarea id="partialSetRules" placeholder="Example: 7_NVDB&#10;One partial name per line or comma-separated.">7_NVDB</textarea>
-      <label class="check-item" style="margin-top:8px; max-width:720px;">
-        <input id="partialNonEmpty" type="checkbox" checked>
+
+
+      <div id="setCheckboxes" class="set-grid"></div>
+
+      <div style="height:14px;"></div>
+
+      <h3 style="margin-bottom:4px;">Required partial set names</h3>
+      <div class="hint">
+        Use this for set families with many variants, for example <b>7_NVDB</b>.
+        An object passes <b>7_NVDB</b> if it has a set such as <b>7_NVDB_Kabelgrøft_843</b>.
+        Use one partial name per line, or separate them with commas.
+      </div>
+      <textarea id="partialSetRules" style="width:100%; min-height:74px; margin-top:8px; border:1px solid var(--border); border-radius:7px; padding:8px; font-size:13px;" placeholder="Example: 7_NVDB">7_NVDB</textarea>
+      <label class="check-item" style="margin-top:8px; max-width:720px; font-weight:normal;">
+        <input id="partialNonEmptyRequired" type="checkbox" checked>
         <span>Require at least one non-empty value inside each matching partial set</span>
       </label>
     </div>
 
     <div class="panel">
-      <div class="summary-cards">
-        <div class="card"><div id="sObjects" class="num info">0</div><div>Objects checked</div></div>
-        <div class="card"><div id="sAllRequired" class="num good">0</div><div>Has all required</div></div>
-        <div class="card"><div id="sMissingRequired" class="num bad">0</div><div>Missing required</div></div>
+      <div class="summary">
+        <div class="card"><div id="sObjects" class="num info">0</div><div>Objects found</div></div>
+        <div class="card"><div id="sAllRequired" class="num good">0</div><div>Has all required sets</div></div>
+        <div class="card"><div id="sMissingRequired" class="num bad">0</div><div>Missing required sets</div></div>
+        <div class="card"><div id="sOnlyRequired" class="num warn">0</div><div>Only required sets</div></div>
+        <div class="card"><div id="sIgnored" class="num warn">0</div><div>Ignored by filter</div></div>
         <div class="card"><div id="sNoKnown" class="num warn">0</div><div>No known set</div></div>
-        <div class="card"><div id="sOnlyRequired" class="num warn">0</div><div>Only required</div></div>
-        <div class="card"><div id="sIgnored" class="num info">0</div><div>Ignored</div></div>
       </div>
-      <h3>Attribute set report by model</h3>
+    </div>
+
+    <div class="panel">
+      <h3 style="margin-top:0;">Attribute set report by model</h3>
       <div id="setReport">No attribute set scan run yet.</div>
     </div>
   </section>
+
+  <div class="panel">
+    <details>
+      <summary>Debug output</summary>
+      <pre id="debugOutput" style="white-space:pre-wrap; word-break:break-word; background:#0f172a; color:#e5e7eb; padding:10px; border-radius:8px; max-height:280px; overflow:auto;">No debug output yet.</pre>
+    </details>
+  </div>
 </main>
 
 <script>
 let API = null;
-let rules = { sets: [] };
-let modelNames = new Map();
+let rules = { version: 1, sets: [] };
+let modelNameById = new Map();
+
+let valueData = emptyValueData();
+let setData = emptySetData();
+
+loadThemePreference();
+init();
+
+function emptyValueData() {
+  return { allGroups: [], passItems: [], failItems: [], noKnownSetItems: [], ignoredItems: [], failuresByModel: new Map(), csvRows: [] };
+}
 
 function emptySetData() {
-  return { allGroups: [], missingItems: [], allRequiredItems: [], ignoredItems: [], reportByModel: new Map(), csvRows: [] };
+  return { allGroups: [], missingItems: [], allRequiredItems: [], onlyRequiredItems: [], ignoredItems: [], reportByModel: new Map(), csvRows: [] };
 }
-function emptyValueData() {
-  return { allGroups: [], passItems: [], failItems: [], reportByModel: new Map(), csvRows: [] };
-}
-let setData = emptySetData();
-let valueData = emptyValueData();
-
-function setStatus(message) {
-  const detail = document.getElementById("status");
-  if (detail) detail.textContent = message;
-  const visible = document.getElementById("visibleStatus");
-  if (visible) visible.textContent = String(message || "Ready.").split("\n")[0];
-}
-function setProgress(percent) {
-  document.getElementById("progressBar").style.width = Math.max(0, Math.min(100, percent || 0)) + "%";
-}
-function pause(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-function escapeHtml(v) {
-  return String(v ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-}
-function escapeJs(v) { return String(v ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
-function normalizeText(v) { return String(v ?? "").trim().replace(/\s+/g, " ").toLowerCase(); }
-function normalizeType(v) { return String(v ?? "").trim().replace(/[\s_\-.]/g, "").toUpperCase(); }
-function getSetName(rule) { return rule.name || rule.setName || rule.propertySet || ""; }
-function modelName(modelId) { return modelNames.get(String(modelId)) || String(modelId); }
 
 function applyTheme(theme) {
-  const actual = theme === "light" ? "light" : "dark";
-  document.body.classList.toggle("theme-dark", actual === "dark");
-  document.body.classList.toggle("theme-light", actual === "light");
-  try { localStorage.setItem("attributeCheckerTheme", actual); } catch(e) {}
+  const actualTheme = theme === "light" ? "light" : "dark";
+  document.body.classList.toggle("theme-dark", actualTheme === "dark");
+  document.body.classList.toggle("theme-light", actualTheme === "light");
+  try { localStorage.setItem("attributeCheckerTheme", actualTheme); } catch (e) {}
+
   const el = document.getElementById("themeStatus");
-  if (el) el.textContent = "Theme: " + actual;
+  if (el) el.textContent = "Theme: " + actualTheme;
 }
+
 function loadThemePreference() {
   let saved = "dark";
-  try { saved = localStorage.getItem("attributeCheckerTheme") || "dark"; } catch(e) {}
+  try { saved = localStorage.getItem("attributeCheckerTheme") || "dark"; } catch (e) {}
   applyTheme(saved);
 }
+
 function toggleTheme() {
-  applyTheme(document.body.classList.contains("theme-dark") ? "light" : "dark");
+  const isDark = document.body.classList.contains("theme-dark");
+  applyTheme(isDark ? "light" : "dark");
+}
+
+async function init() {
+  try {
+    if (!window.TrimbleConnectWorkspace) {
+      setStatus("Workspace API script not found.");
+      return;
+    }
+
+    API = await TrimbleConnectWorkspace.connect(window.parent, (event, data) => {
+      console.log("Trimble event:", event, data);
+    });
+
+    try {
+      await API.ui.setMenu({ title: "Attribute Checker", command: "attribute_checker_open" });
+      await API.ui.setActiveMenuItem("attribute_checker_open");
+    } catch (uiError) {
+      console.warn("Menu setup failed but extension can continue.", uiError);
+    }
+
+    setStatus("Connected. Press Update rules, then choose a tab and run a scan.");
+    await loadRules();
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not connect to Trimble Connect.\n\n" + errorMessage(error));
+  }
 }
 
 function openTab(name) {
@@ -431,228 +494,850 @@ function openTab(name) {
   document.getElementById("tabBtnSets").classList.toggle("active", name === "sets");
 }
 
-async function init() {
+async function loadRules() {
   try {
-    API = await TrimbleConnectWorkspace.connect(window.parent, (event, data) => console.log("Trimble event", event, data));
-    await API.ui.setMenu({ title: "Attribute Checker", command: "attribute_checker_open" });
-    await API.ui.setActiveMenuItem("attribute_checker_open");
-    await loadRules();
-    setStatus("Connected. Rules loaded. Ready.");
+    const url = new URL("rules.json", window.location.href);
+    url.searchParams.set("v", Date.now().toString());
+
+    const response = await fetch(url.toString(), { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not load rules.json. HTTP " + response.status);
+
+    const loaded = await response.json();
+    if (!loaded || !Array.isArray(loaded.sets)) {
+      throw new Error("Invalid rules file. Expected a JSON file with a 'sets' array.");
+    }
+
+    rules = normalizeRules(loaded);
+    renderSetCheckboxes();
+    setStatus("Rules updated. Loaded " + rules.sets.length + " attribute set(s).");
+    debug("Loaded rules", rules);
   } catch (error) {
     console.error(error);
-    setStatus("Could not connect to Trimble Connect. " + errorMessage(error));
+    setStatus("Could not load rules.json.\n\n" + errorMessage(error));
   }
 }
 
-async function loadRules() {
-  try {
-    const url = new URL("rules.json?v=" + Date.now(), window.location.href).href;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Could not load rules.json. HTTP " + response.status);
-    rules = await response.json();
-    if (Array.isArray(rules)) rules = { sets: rules };
-    if (!Array.isArray(rules.sets)) rules.sets = [];
-    renderSetCheckboxes();
-    setStatus("Rules loaded: " + rules.sets.length + " set(s).");
-  } catch (error) {
-    console.error(error);
-    setStatus("Rules could not be loaded. " + errorMessage(error));
-  }
+function normalizeRules(input) {
+  return {
+    version: input.version || 1,
+    sets: (input.sets || []).map(set => ({
+      name: String(set.name || "").trim(),
+      attributes: (set.attributes || []).map(attr => ({
+        name: String(attr.name || "").trim(),
+        path: attr.path || makePath(set.name, attr.name),
+        checkType: attr.checkType || "text",
+        required: attr.required !== false,
+        acceptedValues: Array.isArray(attr.acceptedValues) ? attr.acceptedValues.map(v => String(v)) : [],
+        min: attr.min !== undefined ? String(attr.min) : "",
+        max: attr.max !== undefined ? String(attr.max) : "",
+        note: attr.note || ""
+      })).filter(attr => attr.name || attr.path)
+    })).filter(set => set.name)
+  };
 }
 
 function renderSetCheckboxes() {
   const container = document.getElementById("setCheckboxes");
-  const names = rules.sets.map(getSetName).filter(Boolean).sort((a,b) => a.localeCompare(b));
-  container.innerHTML = names.length ? names.map(name => `
-    <label class="check-item">
-      <input type="checkbox" class="required-set" value="${escapeHtml(name)}">
-      <span>${escapeHtml(name)}</span>
-    </label>
-  `).join("") : `<div class="hint">No sets found in rules.json.</div>`;
-}
-function selectAllRequiredSets() { document.querySelectorAll(".required-set").forEach(x => x.checked = true); }
-function clearRequiredSets() { document.querySelectorAll(".required-set").forEach(x => x.checked = false); }
-function getRequiredSets() { return Array.from(document.querySelectorAll(".required-set:checked")).map(x => x.value); }
-function getPartialRules() {
-  const raw = document.getElementById("partialSetRules").value || "";
-  return raw.split(/[\n,;]/g).map(v => v.trim()).filter(Boolean);
-}
-function getPartialNonEmpty() { return document.getElementById("partialNonEmpty").checked; }
-function getSkipNoKnownAsMissing() { return document.getElementById("skipNoKnownAsMissing").checked; }
-function getIgnoredCommonTypes() {
-  return (document.getElementById("ignoredCommonTypes").value || "").split(",").map(normalizeType).filter(Boolean);
-}
-function getIgnoredProductRootNames() {
-  return (document.getElementById("ignoredProductRootNames").value || "").split(",").map(normalizeText).filter(Boolean);
-}
+  container.innerHTML = "";
 
-async function loadModelNames() {
-  modelNames = new Map();
-  try {
-    const models = await API.viewer.getModels();
-    (models || []).forEach(m => {
-      const id = m.id || m.modelId || m.modelID;
-      const name = m.name || m.modelName || m.fileName || id;
-      if (id !== undefined) modelNames.set(String(id), String(name));
-    });
-  } catch(e) {
-    console.warn("Could not load model names", e);
+  if (!rules.sets.length) {
+    container.textContent = "No attribute sets found in rules.json.";
+    return;
   }
+
+  rules.sets.forEach(set => {
+    const label = document.createElement("label");
+    label.className = "check-item";
+    label.innerHTML = `
+      <input type="checkbox" class="required-set-checkbox" value="${escapeHtml(set.name)}">
+      <span>${escapeHtml(set.name)}</span>
+    `;
+    container.appendChild(label);
+  });
 }
 
-function normalizeObjectGroups(input) {
+function getRequiredSets() {
+  return Array.from(document.querySelectorAll(".required-set-checkbox:checked")).map(cb => cb.value);
+}
+
+function getPartialSetRules() {
+  const input = document.getElementById("partialSetRules");
   if (!input) return [];
-  if (Array.isArray(input)) {
-    return input.map(g => ({
-      modelId: g.modelId || g.modelID || g.id,
-      objectRuntimeIds: (g.objectRuntimeIds || g.objectIds || g.ids || []).map(Number).filter(Number.isFinite)
-    })).filter(g => g.modelId !== undefined && g.objectRuntimeIds.length);
-  }
-  if (input.modelObjectIds) return normalizeObjectGroups(input.modelObjectIds);
-  return [];
-}
-function countGroupObjects(groups) { return groups.reduce((sum,g) => sum + g.objectRuntimeIds.length, 0); }
 
-async function getObjectPropertiesRobust(modelId, ids) {
-  try { return await API.viewer.getObjectProperties(modelId, ids); }
-  catch(e1) {
-    try { return await API.viewer.getObjectProperties({ modelId, objectRuntimeIds: ids }); }
-    catch(e2) { console.warn("getObjectProperties failed", modelId, e1, e2); return []; }
-  }
+  return input.value
+    .split(/[\n,;]/g)
+    .map(v => v.trim())
+    .filter(Boolean);
 }
 
-function flattenProperties(raw) {
-  const flat = {};
-  function add(path, value) {
-    if (!path) return;
-    if (value === undefined || value === null || typeof value === "object") return;
-    flat[String(path)] = value;
-  }
-  function walk(node, prefix="") {
-    if (node === undefined || node === null) return;
-    if (Array.isArray(node)) { node.forEach(x => walk(x, prefix)); return; }
-    if (typeof node !== "object") return;
-
-    const name = node.name ?? node.Name ?? node.key ?? node.Key ?? node.displayName ?? node.DisplayName ?? node.label ?? node.Label ?? node.title ?? node.Title;
-    const value = node.value ?? node.Value ?? node.val ?? node.Val ?? node.text ?? node.Text ?? node.displayValue ?? node.DisplayValue;
-    const path = name ? (prefix ? prefix + "." + String(name) : String(name)) : prefix;
-    if (name && value !== undefined && value !== null && typeof value !== "object") add(path, value);
-
-    ["properties","Properties","children","Children","items","Items","propertySets","PropertySets","parameters","Parameters"].forEach(k => {
-      if (node[k]) walk(node[k], path);
-    });
-
-    Object.keys(node).forEach(k => {
-      if (["name","Name","key","Key","displayName","DisplayName","label","Label","title","Title","value","Value","val","Val","text","Text","displayValue","DisplayValue"].includes(k)) return;
-      if (typeof node[k] === "object") walk(node[k], path || k);
-    });
-  }
-  walk(raw);
-  return flat;
+function getPartialNonEmptyRequired() {
+  const input = document.getElementById("partialNonEmptyRequired");
+  return input ? input.checked : true;
 }
 
-function collectSetNames(flat) {
-  const sets = new Set();
+function normalizeSetSearch(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function collectNumberedSetNamesFromFlat(flat) {
+  const result = new Set();
+
   Object.keys(flat || {}).forEach(path => {
-    const parts = String(path).split(".");
-    for (let i=0; i<parts.length; i++) {
-      const part = parts[i].trim();
-      if (/^[0-9]_[A-Za-zÆØÅæøå0-9_.\-]+/.test(part)) sets.add(part);
-    }
+    String(path).split(".").forEach(part => {
+      const clean = String(part || "").trim();
+
+      // Infrastructure property set convention:
+      // 0_Generell, 1_ELE, 3_Beskrivelse, 7_NVDB_Kabelgrøft_843, etc.
+      if (/^[0-9]_[A-Za-zÆØÅæøå0-9_.\\-]+/.test(clean)) {
+        result.add(clean);
+      }
+    });
   });
-  return Array.from(sets).sort((a,b) => a.localeCompare(b));
+
+  return Array.from(result).sort((a, b) => a.localeCompare(b));
 }
 
-function detectExactRuleSets(flat) {
-  const keys = Object.keys(flat || {}).map(k => k.toLowerCase());
-  return rules.sets.map(getSetName).filter(Boolean).filter(setName => {
-    const prefix = setName.toLowerCase() + ".";
-    return keys.some(k => k === setName.toLowerCase() || k.startsWith(prefix));
-  });
+function getAllDetectedSetNames(flat, exactDetectedSets) {
+  const numberedSets = collectNumberedSetNamesFromFlat(flat);
+
+  return Array.from(new Set([...(exactDetectedSets || []), ...numberedSets]))
+    .sort((a, b) => a.localeCompare(b));
 }
 
-function detectAllRecognizedSets(flat) {
-  const fromPaths = collectSetNames(flat);
-  const exact = detectExactRuleSets(flat);
-  return Array.from(new Set([...fromPaths, ...exact])).sort((a,b) => a.localeCompare(b));
-}
+function getMatchingPartialSets(allDetectedSets, partialName) {
+  const needle = normalizeSetSearch(partialName);
+  if (!needle) return [];
 
-function matchingPartialSets(allSets, partial) {
-  const needle = normalizeText(partial);
-  return allSets.filter(setName => normalizeText(setName).includes(needle));
+  return (allDetectedSets || []).filter(setName =>
+    normalizeSetSearch(setName).includes(needle)
+  );
 }
 
 function setHasNonEmptyValue(flat, setName) {
-  const prefix = setName.toLowerCase() + ".";
+  const prefix = String(setName || "").toLowerCase() + ".";
+
   return Object.entries(flat || {}).some(([key, value]) => {
-    return key.toLowerCase().startsWith(prefix) && String(value ?? "").trim() !== "";
+    return String(key).toLowerCase().startsWith(prefix) && !isBlank(value);
   });
 }
 
-function getCommonType(flat) {
-  for (const [key, value] of Object.entries(flat || {})) {
-    const k = key.toLowerCase().replace(/\s+/g, "");
-    if (k.endsWith("commontype") || k.endsWith("type") || k.includes("commontype")) {
-      const v = String(value || "").trim();
-      if (v) return v;
+function isSetRequiredByExactOrPartial(setName, requiredSets, partialRules) {
+  const exactMatch = (requiredSets || []).some(required =>
+    lower(required) === lower(setName)
+  );
+
+  if (exactMatch) return true;
+
+  return (partialRules || []).some(partial =>
+    normalizeSetSearch(setName).includes(normalizeSetSearch(partial))
+  );
+}
+
+function getSkipNoKnownAsMissing() {
+  const input = document.getElementById("skipNoKnownAsMissing");
+  return input ? input.checked : false;
+}
+
+function getIgnoredCommonTypes() {
+  const input = document.getElementById("ignoredCommonTypes");
+  if (!input) return [];
+  return input.value
+    .split(",")
+    .map(v => normalizeTypeValue(v))
+    .filter(Boolean);
+}
+
+function getIgnoredPathKeywords() {
+  const input = document.getElementById("ignoredPathKeywords");
+  if (!input) return [];
+  return input.value
+    .split(",")
+    .map(v => normalizeKeyword(v))
+    .filter(Boolean);
+}
+
+function getIgnoredProductRootNames() {
+  const input = document.getElementById("ignoredProductRootNames");
+  if (!input) return [];
+  return input.value
+    .split(",")
+    .map(v => normalizeExactText(v))
+    .filter(Boolean);
+}
+
+function normalizeExactText(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function getProductRootNameMatch(flat, raw = null) {
+  const ignoredNames = getIgnoredProductRootNames();
+  if (!ignoredNames.length) return "";
+
+  const flatEntries = Object.entries(flat || {});
+
+  for (const [key, value] of flatEntries) {
+    const keyNorm = normalizeKeyword(key);
+    const valueNorm = normalizeExactText(value);
+
+    const looksLikeProductName =
+      keyNorm.includes("productproductname") ||
+      keyNorm.endsWith("productname") ||
+      keyNorm.includes("productname");
+
+    if (looksLikeProductName && ignoredNames.includes(valueNorm)) {
+      return "Product Name: " + String(value).trim();
     }
   }
+
+  const matches = [];
+
+  function primitive(value) {
+    return value !== undefined && value !== null && typeof value !== "object";
+  }
+
+  function normName(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/_/g, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "")
+      .toLowerCase();
+  }
+
+  function walk(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+
+    if (typeof node !== "object") return;
+
+    const name =
+      node.name ?? node.Name ??
+      node.key ?? node.Key ??
+      node.displayName ?? node.DisplayName ??
+      node.label ?? node.Label ??
+      node.title ?? node.Title;
+
+    const value =
+      node.value ?? node.Value ??
+      node.val ?? node.Val ??
+      node.text ?? node.Text ??
+      node.displayValue ?? node.DisplayValue;
+
+    if (name && primitive(value)) {
+      const nameNorm = normName(name);
+      const valueNorm = normalizeExactText(value);
+      if ((nameNorm === "productname" || nameNorm.endsWith("productname")) && ignoredNames.includes(valueNorm)) {
+        matches.push("Product Name: " + String(value).trim());
+      }
+    }
+
+    const nestedNameValue = name && typeof name === "object"
+      ? (name.value ?? name.Value ?? name.text ?? name.Text ?? name.name ?? name.Name)
+      : null;
+
+    const nestedActualValue = value && typeof value === "object"
+      ? (value.value ?? value.Value ?? value.text ?? value.Text ?? value.name ?? value.Name)
+      : null;
+
+    if (nestedNameValue && primitive(nestedActualValue)) {
+      const nameNorm = normName(nestedNameValue);
+      const valueNorm = normalizeExactText(nestedActualValue);
+      if ((nameNorm === "productname" || nameNorm.endsWith("productname")) && ignoredNames.includes(valueNorm)) {
+        matches.push("Product Name: " + String(nestedActualValue).trim());
+      }
+    }
+
+    Object.keys(node).forEach(key => walk(node[key]));
+  }
+
+  walk(raw);
+  if (matches.length) return matches[0];
+
+  const rawNames = [];
+  const rawValues = [];
+
+  function collect(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(collect);
+      return;
+    }
+
+    if (typeof node !== "object") {
+      if (primitive(node)) rawValues.push(String(node));
+      return;
+    }
+
+    const candidates = [
+      node.name, node.Name, node.key, node.Key, node.displayName, node.DisplayName,
+      node.label, node.Label, node.title, node.Title, node.type, node.Type
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate === undefined || candidate === null) continue;
+      if (typeof candidate === "object") {
+        const nested = candidate.value ?? candidate.Value ?? candidate.text ?? candidate.Text ?? candidate.name ?? candidate.Name;
+        if (primitive(nested)) rawNames.push(String(nested));
+      } else {
+        rawNames.push(String(candidate));
+      }
+    }
+
+    const values = [node.value, node.Value, node.val, node.Val, node.text, node.Text, node.displayValue, node.DisplayValue];
+    for (const candidate of values) {
+      if (primitive(candidate)) rawValues.push(String(candidate));
+    }
+
+    Object.keys(node).forEach(key => collect(node[key]));
+  }
+
+  collect(raw);
+
+  const hasUnitsInContext = rawNames.some(name => normalizeKeyword(name).includes("unitsincontext")) ||
+    Object.keys(flat || {}).some(key => normalizeKeyword(key).includes("unitsincontext"));
+
+  const exactRootValue = rawValues.find(value => ignoredNames.includes(normalizeExactText(value)));
+  if (hasUnitsInContext && exactRootValue) {
+    return "Root value with Units In Context: " + exactRootValue;
+  }
+
   return "";
 }
 
-function shouldIgnoreObject(flat) {
-  const commonType = getCommonType(flat);
-  const ignoredTypes = getIgnoredCommonTypes();
-  if (commonType && ignoredTypes.includes(normalizeType(commonType))) {
-    return { ignore:true, reason:"Common Type: " + commonType };
-  }
-
-  const ignoredNames = getIgnoredProductRootNames();
-  let hasUnits = false;
-  let rootName = "";
-  for (const [key, value] of Object.entries(flat || {})) {
-    const nk = key.toLowerCase().replace(/[\s_.-]/g, "");
-    const nv = normalizeText(value);
-    if (nk.includes("unitsincontext")) hasUnits = true;
-    if (nk.includes("productname") && ignoredNames.includes(nv)) rootName = String(value).trim();
-  }
-  if (rootName) return { ignore:true, reason:"Product/root match: Product Name: " + rootName };
-  if (hasUnits) {
-    for (const value of Object.values(flat || {})) {
-      if (ignoredNames.includes(normalizeText(value))) return { ignore:true, reason:"Product/root match: Root value with Units In Context: " + value };
-    }
-  }
-  return { ignore:false, reason:"" };
+function normalizeKeyword(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/_/g, "")
+    .replace(/-/g, "")
+    .replace(/\./g, "")
+    .toLowerCase();
 }
 
-function objectIdentity(flat, modelId, objectId) {
-  const nameKeys = ["name","product name","object name","ifc name","tag","guid","globalid"];
-  let label = "Object " + objectId;
-  for (const [key, value] of Object.entries(flat || {})) {
-    const k = key.toLowerCase();
-    if (nameKeys.some(n => k.endsWith(n) || k.includes(n)) && String(value).trim()) {
-      label = String(value).trim();
-      break;
-    }
-  }
-  return { label, description: "Model: " + modelName(modelId) + " | Runtime ID: " + objectId };
-}
+function getPropertyPathKeywordMatch(flat, raw = null) {
+  const ignoredKeywords = getIgnoredPathKeywords();
+  if (!ignoredKeywords.length) return "";
 
-function getModelRecord(map, modelId) {
-  const key = String(modelId);
-  if (!map.has(key)) {
-    map.set(key, {
-      modelId, modelName: modelName(modelId), objectsChecked:0,
-      missingObjects:[], noKnownObjects:[], onlyRequiredObjects:[], ignoredObjects:[],
-      setCounts:new Map(), partialCounts:new Map()
+  function keywordMatches(candidateText, keyword) {
+    const candidate = normalizeKeyword(candidateText);
+    if (!candidate || !keyword) return false;
+
+    // IMPORTANT:
+    // Do not allow generic container words to match as "contains".
+    // Example:
+    //   IfcBuildingElementProxyType.Name
+    // contains "IfcBuilding", but it is a real object type and should NOT be ignored.
+    //
+    // For generic container concepts, only accept exact group/type matches.
+    const exactOnly = ["project", "site", "building", "buildingstorey", "beam", "slab", "ifcproject", "ifcsite", "ifcbuilding", "ifcbuildingstorey"];
+    if (exactOnly.includes(keyword)) {
+      return candidate === keyword;
+    }
+
+    // For more specific keywords entered by the user, allow contains matching.
+    // Example: "ifcbuildingstoreycompositiontype" can match a longer path.
+    return candidate.includes(keyword);
+  }
+
+  const flatKeys = Object.keys(flat || {});
+  for (const key of flatKeys) {
+    const normalizedKey = normalizeKeyword(key);
+
+    // Check both the full path and each path part separately.
+    // This makes "Ifc Building Storey" match the exact path part "IfcBuildingStorey",
+    // but prevents it from matching "IfcBuildingElementProxyType".
+    const parts = String(key)
+      .split(/[.\[/\]>{}:|]+/g)
+      .map(part => normalizeKeyword(part))
+      .filter(Boolean);
+
+    const matched = ignoredKeywords.find(keyword => {
+      if (keywordMatches(normalizedKey, keyword) && !["ifcbuilding", "building"].includes(keyword)) return true;
+      return parts.some(part => keywordMatches(part, keyword));
     });
+
+    if (matched) return key;
   }
-  return map.get(key);
+
+  const rawNames = [];
+  const rawValues = [];
+
+  function collectNamesAndValues(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(collectNamesAndValues);
+      return;
+    }
+
+    if (typeof node !== "object") {
+      if (typeof node === "string" || typeof node === "number") rawValues.push(String(node));
+      return;
+    }
+
+    const nameCandidates = [
+      node.name, node.Name,
+      node.key, node.Key,
+      node.displayName, node.DisplayName,
+      node.label, node.Label,
+      node.title, node.Title,
+      node.type, node.Type
+    ];
+
+    const valueCandidates = [
+      node.value, node.Value,
+      node.val, node.Val,
+      node.text, node.Text,
+      node.displayValue, node.DisplayValue
+    ];
+
+    for (const candidate of nameCandidates) {
+      if (candidate === undefined || candidate === null) continue;
+
+      if (typeof candidate === "object") {
+        const nested = candidate.value ?? candidate.Value ?? candidate.text ?? candidate.Text ?? candidate.name ?? candidate.Name;
+        if (nested !== undefined && nested !== null && typeof nested !== "object") rawNames.push(String(nested));
+      } else {
+        rawNames.push(String(candidate));
+      }
+    }
+
+    for (const candidate of valueCandidates) {
+      if (candidate === undefined || candidate === null) continue;
+
+      if (typeof candidate === "object") {
+        const nested = candidate.value ?? candidate.Value ?? candidate.text ?? candidate.Text ?? candidate.name ?? candidate.Name;
+        if (nested !== undefined && nested !== null && typeof nested !== "object") rawValues.push(String(nested));
+      } else {
+        rawValues.push(String(candidate));
+      }
+    }
+
+    Object.keys(node).forEach(key => collectNamesAndValues(node[key]));
+  }
+
+  collectNamesAndValues(raw);
+
+  // Check raw property/group/type names exactly for generic container keywords.
+  for (const name of rawNames) {
+    const matched = ignoredKeywords.find(keyword => keywordMatches(name, keyword));
+    if (matched) return name;
+  }
+
+  // Extra fallback: if raw values contain an exact ignored type value such as
+  // PROJECT or SLAB, use that as an ignore signal. Exact match only.
+  const ignoredTypeValues = getIgnoredCommonTypes();
+  for (const value of rawValues) {
+    const normalizedValue = normalizeTypeValue(value);
+    if (ignoredTypeValues.includes(normalizedValue)) {
+      return "Exact raw value: " + value;
+    }
+  }
+
+  return "";
+}
+
+
+function normalizeTypeValue(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/_/g, "")
+    .replace(/-/g, "")
+    .toUpperCase();
+}
+
+function getCommonType(flat) {
+  const keys = Object.keys(flat);
+  const ignoredTypes = getIgnoredCommonTypes();
+
+  function normPath(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/_/g, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "")
+      .toLowerCase();
+  }
+
+  // Best case: the flattened property path contains "Common Type".
+  // This catches paths such as:
+  // Reference Object.Common Type
+  // ReferenceObject.CommonType
+  // Reference Object.Properties.Common Type.Value
+  const commonTypeKey = keys.find(key => normPath(key).includes("commontype"));
+  if (commonTypeKey && !isBlank(flat[commonTypeKey])) {
+    return String(flat[commonTypeKey]).trim();
+  }
+
+  // Some models/API responses may flatten the value under a more generic path,
+  // but still include both "common" and "type" somewhere in the path.
+  const commonAndTypeKey = keys.find(key => {
+    const k = normPath(key);
+    return k.includes("common") && k.includes("type");
+  });
+  if (commonAndTypeKey && !isBlank(flat[commonAndTypeKey])) {
+    return String(flat[commonAndTypeKey]).trim();
+  }
+
+  // Fallback: if a property value itself is one of the ignored type values,
+  // and the property path looks type-related, treat it as Common Type.
+  // This helps if the API returns a path like "Reference Object.Type".
+  const typeValueKey = keys.find(key => {
+    const path = normPath(key);
+    const value = normalizeTypeValue(flat[key]);
+    return ignoredTypes.includes(value) && (
+      path.includes("referenceobject") ||
+      path.endsWith("type") ||
+      path.includes("objecttype") ||
+      path.includes("entitytype")
+    );
+  });
+
+  if (typeValueKey && !isBlank(flat[typeValueKey])) {
+    return String(flat[typeValueKey]).trim();
+  }
+
+  return "";
+}
+
+function getCommonTypeFromRaw(raw) {
+  const foundValues = [];
+
+  function normName(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/_/g, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "")
+      .toLowerCase();
+  }
+
+  function primitive(value) {
+    return value !== undefined && value !== null && typeof value !== "object";
+  }
+
+  function walk(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+
+    if (typeof node !== "object") return;
+
+    const name =
+      node.name ?? node.Name ??
+      node.key ?? node.Key ??
+      node.displayName ?? node.DisplayName ??
+      node.label ?? node.Label ??
+      node.title ?? node.Title;
+
+    const value =
+      node.value ?? node.Value ??
+      node.val ?? node.Val ??
+      node.text ?? node.Text ??
+      node.displayValue ?? node.DisplayValue;
+
+    if (name && normName(name) === "commontype" && primitive(value) && !isBlank(value)) {
+      foundValues.push(String(value).trim());
+    }
+
+    // Some API responses store property name/value as nested objects.
+    // Example: { name: { value: "Common Type" }, value: { value: "PROJECT" } }
+    const nestedNameValue = name && typeof name === "object"
+      ? (name.value ?? name.Value ?? name.text ?? name.Text)
+      : null;
+
+    const nestedActualValue = value && typeof value === "object"
+      ? (value.value ?? value.Value ?? value.text ?? value.Text)
+      : null;
+
+    if (nestedNameValue && normName(nestedNameValue) === "commontype" && primitive(nestedActualValue) && !isBlank(nestedActualValue)) {
+      foundValues.push(String(nestedActualValue).trim());
+    }
+
+    Object.keys(node).forEach(key => walk(node[key]));
+  }
+
+  walk(raw);
+  return foundValues[0] || "";
+}
+
+function shouldIgnoreObject(flat, raw = null) {
+  const commonType = getCommonType(flat) || getCommonTypeFromRaw(raw);
+  const ignored = getIgnoredCommonTypes();
+  const normalizedCommonType = normalizeTypeValue(commonType);
+
+  if (commonType && ignored.includes(normalizedCommonType)) {
+    return {
+      ignore: true,
+      commonType,
+      reason: "Common Type"
+    };
+  }
+
+  const productRootMatch = getProductRootNameMatch(flat, raw);
+  if (productRootMatch) {
+    return {
+      ignore: true,
+      commonType: commonType || "",
+      reason: "Product/root match: " + productRootMatch
+    };
+  }
+
+  const keywordMatch = getPropertyPathKeywordMatch(flat, raw);
+  if (keywordMatch) {
+    return {
+      ignore: true,
+      commonType: commonType || "",
+      reason: "Property group/path keyword: " + keywordMatch
+    };
+  }
+
+  return {
+    ignore: false,
+    commonType: commonType || "",
+    reason: ""
+  };
+}
+
+function selectAllRequiredSets() {
+  document.querySelectorAll(".required-set-checkbox").forEach(cb => cb.checked = true);
+}
+
+function clearRequiredSets() {
+  document.querySelectorAll(".required-set-checkbox").forEach(cb => cb.checked = false);
+}
+
+async function runValueScan() {
+  try {
+    ensureReady();
+    if (!rules.sets.length) return setStatus("No rules loaded. Press Update rules first.");
+    if (!confirm("This will scan objects loaded in the 3D viewer. Continue?")) return;
+
+    clearValueReport();
+    setProgress(0);
+    await loadModelNames();
+
+    setStatus("Getting objects from loaded viewer models...");
+    const groups = normalizeObjectGroups(await API.viewer.getObjects());
+    valueData.allGroups = groups;
+
+    const totalObjects = countGroupObjects(groups);
+    document.getElementById("vObjects").textContent = totalObjects;
+    if (totalObjects === 0) return setStatus("No objects returned by API.viewer.getObjects().");
+
+    const batchSize = Number(document.getElementById("batchSize").value || 100);
+    let processed = 0, checked = 0, passed = 0, failed = 0, noKnown = 0, ignored = 0;
+
+    for (const group of groups) {
+      for (let i = 0; i < group.objectRuntimeIds.length; i += batchSize) {
+        const batchIds = group.objectRuntimeIds.slice(i, i + batchSize);
+        const properties = await getObjectPropertiesRobust(group.modelId, batchIds);
+        const propertyMap = mapPropertiesToIds(batchIds, properties);
+
+        for (const objectId of batchIds) {
+          const objectProps = propertyMap.get(String(objectId));
+          const flat = objectProps ? flattenProperties(objectProps) : {};
+          const ignoreCheck = shouldIgnoreObject(flat, objectProps);
+
+          processed++;
+
+          if (ignoreCheck.ignore) {
+            ignored++;
+            valueData.ignoredItems.push({
+              modelId: group.modelId,
+              objectRuntimeId: objectId,
+              commonType: ignoreCheck.commonType,
+              reason: ignoreCheck.reason
+            });
+            setProgress((processed / totalObjects) * 100);
+            continue;
+          }
+
+          const result = checkObjectValues(group.modelId, objectId, flat);
+
+          if (result.status === "noKnownSet") {
+            noKnown++;
+            valueData.noKnownSetItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
+          } else {
+            checked++;
+            if (result.status === "passed") {
+              passed++;
+              valueData.passItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
+            } else {
+              failed++;
+              valueData.failItems.push({ modelId: group.modelId, objectRuntimeId: objectId });
+              addValueFailure(group.modelId, objectId, result, flat);
+            }
+          }
+
+          setProgress((processed / totalObjects) * 100);
+        }
+
+        setStatus("Value scan running...\nProcessed " + processed + " of " + totalObjects + " objects.");
+        await pause(10);
+      }
+    }
+
+    updateValueSummary(totalObjects, checked, passed, failed, noKnown, ignored);
+    renderValueReport();
+    setProgress(100);
+    setStatus(
+      "Value scan complete.\n" +
+      "Objects found: " + totalObjects + "\n" +
+      "Objects checked: " + checked + "\n" +
+      "Passed: " + passed + "\n" +
+      "Failed: " + failed + "\n" +
+      "Ignored by filter: " + ignored + "\n" +
+      "Not checked - no matching set: " + noKnown
+    );
+  } catch (error) {
+    console.error(error);
+    setStatus("Value scan failed.\n\n" + errorMessage(error));
+    debug("Value scan error", { message: errorMessage(error), stack: error.stack });
+  }
+}
+
+function checkObjectValues(modelId, objectId, flat) {
+  const detectedSets = detectKnownSets(flat);
+
+  if (detectedSets.length === 0) {
+    return { status: "noKnownSet", detectedSets, problems: [] };
+  }
+
+  const problems = [];
+  for (const setName of detectedSets) {
+    const set = rules.sets.find(s => lower(s.name) === lower(setName));
+    if (!set) continue;
+
+    for (const rule of set.attributes) {
+      const result = evaluateRule(rule, flat);
+      if (result.status === "missing" || result.status === "incorrect") {
+        problems.push({
+          setName: set.name,
+          attributePath: rule.path || makePath(set.name, rule.name),
+          attributeName: rule.name,
+          status: result.status,
+          actualValue: result.actualValue,
+          expected: describeExpected(rule),
+          message: result.message
+        });
+      }
+    }
+  }
+
+  return { status: problems.length ? "failed" : "passed", detectedSets, problems };
+}
+
+function addValueFailure(modelId, objectId, result, flat) {
+  const key = String(modelId);
+  if (!valueData.failuresByModel.has(key)) {
+    valueData.failuresByModel.set(key, { modelId, modelName: modelName(modelId), objects: [] });
+  }
+
+  const identity = objectIdentity(objectId, flat);
+  const objectRecord = {
+    modelId,
+    objectRuntimeId: objectId,
+    identity,
+    detectedSets: result.detectedSets,
+    problems: result.problems
+  };
+
+  valueData.failuresByModel.get(key).objects.push(objectRecord);
+
+  result.problems.forEach(p => {
+    valueData.csvRows.push([
+      modelName(modelId), modelId, objectId, identity.label,
+      p.setName, p.attributePath, p.status, p.actualValue, p.expected, p.message
+    ]);
+  });
+}
+
+function renderValueReport() {
+  const container = document.getElementById("valueReport");
+  container.innerHTML = "";
+
+  if (valueData.failuresByModel.size === 0) {
+    container.textContent = "No failed objects found.";
+    return;
+  }
+
+  for (const [, model] of valueData.failuresByModel) {
+    const problemCount = model.objects.reduce((sum, obj) => sum + obj.problems.length, 0);
+    const details = document.createElement("details");
+    details.className = "model";
+    details.innerHTML = `
+      <summary>${escapeHtml(model.modelName)}
+        <span class="badge red">${model.objects.length} failed object(s)</span>
+        <span class="badge orange">${problemCount} problem attribute(s)</span>
+      </summary>
+      <div class="detail-body"></div>
+    `;
+
+    const body = details.querySelector(".detail-body");
+    model.objects.forEach(obj => body.appendChild(renderValueObject(obj)));
+    container.appendChild(details);
+  }
+}
+
+function renderValueObject(obj) {
+  const details = document.createElement("details");
+  details.className = "object";
+
+  const setPills = obj.detectedSets.map(s => `<span class="pill">${escapeHtml(s)}</span>`).join("");
+  details.innerHTML = `
+    <summary>Object ${escapeHtml(obj.identity.label)}
+      <span class="badge red">${obj.problems.length} problem(s)</span>
+      ${setPills}
+    </summary>
+    <div class="detail-body">
+      <div class="buttons" style="justify-content:flex-end;">
+        <button class="secondary small" onclick="selectOneObject('${escapeJs(obj.modelId)}', ${Number(obj.objectRuntimeId)})">Select</button>
+      </div>
+      <div class="small-text">${escapeHtml(obj.identity.description)}</div>
+      <table>
+        <thead><tr><th>Set</th><th>Attribute</th><th>Status</th><th>Actual value</th><th>Expected</th><th>Message</th></tr></thead>
+        <tbody>
+          ${obj.problems.map(p => `
+            <tr>
+              <td>${escapeHtml(p.setName)}</td>
+              <td>${escapeHtml(p.attributePath)}</td>
+              <td class="problem">${escapeHtml(p.status)}</td>
+              <td>${escapeHtml(p.actualValue || "-")}</td>
+              <td>${escapeHtml(p.expected)}</td>
+              <td>${escapeHtml(p.message)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  return details;
 }
 
 async function runSetScan() {
   try {
-    if (!API) return setStatus("API is not connected yet.");
+    ensureReady();
+    if (!rules.sets.length) return setStatus("No rules loaded. Press Update rules first.");
     if (!confirm("This will scan attribute set coverage for objects loaded in the 3D viewer. Continue?")) return;
 
     clearSetReport();
@@ -660,198 +1345,307 @@ async function runSetScan() {
     await loadModelNames();
 
     const requiredSets = getRequiredSets();
-    const partialRules = getPartialRules();
-    const partialNonEmpty = getPartialNonEmpty();
+    const partialRules = getPartialSetRules();
+    const partialNonEmptyRequired = getPartialNonEmptyRequired();
     const skipNoKnownAsMissing = getSkipNoKnownAsMissing();
 
     setStatus("Getting objects from loaded viewer models...");
     const groups = normalizeObjectGroups(await API.viewer.getObjects());
     setData.allGroups = groups;
-    const total = countGroupObjects(groups);
 
-    let checked = 0, hasAll = 0, missing = 0, noKnown = 0, onlyRequired = 0, ignored = 0;
+    const totalObjects = countGroupObjects(groups);
+    document.getElementById("sObjects").textContent = totalObjects;
+    if (totalObjects === 0) return setStatus("No objects returned by API.viewer.getObjects().");
+
+    const hasAnyRequiredRule = requiredSets.length > 0 || partialRules.length > 0;
+    const batchSize = Number(document.getElementById("batchSize").value || 100);
+    let processed = 0, hasAllRequired = 0, missingRequired = 0, onlyRequired = 0, noKnown = 0, ignored = 0;
 
     for (const group of groups) {
-      const ids = group.objectRuntimeIds;
-      const chunks = chunkArray(ids, 100);
+      const modelRecord = ensureSetModelRecord(group.modelId);
 
-      for (const chunk of chunks) {
-        const props = await getObjectPropertiesRobust(group.modelId, chunk);
-        const list = Array.isArray(props) ? props : [];
+      for (let i = 0; i < group.objectRuntimeIds.length; i += batchSize) {
+        const batchIds = group.objectRuntimeIds.slice(i, i + batchSize);
+        const properties = await getObjectPropertiesRobust(group.modelId, batchIds);
+        const propertyMap = mapPropertiesToIds(batchIds, properties);
 
-        for (let i=0; i<chunk.length; i++) {
-          const objectId = chunk[i];
-          const raw = list[i] || list.find(p => Number(p.id || p.objectRuntimeId || p.objectId) === Number(objectId)) || {};
-          const flat = flattenProperties(raw);
-          const identity = objectIdentity(flat, group.modelId, objectId);
+        for (const objectId of batchIds) {
+          const objectProps = propertyMap.get(String(objectId));
+          const flat = objectProps ? flattenProperties(objectProps) : {};
+          const ignoreCheck = shouldIgnoreObject(flat, objectProps);
 
-          const ignoreCheck = shouldIgnoreObject(flat);
-          const modelRecord = getModelRecord(setData.reportByModel, group.modelId);
+          processed++;
 
           if (ignoreCheck.ignore) {
             ignored++;
-            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, reason: ignoreCheck.reason, detectedSets: [] };
-            setData.ignoredItems.push(item);
-            modelRecord.ignoredObjects.push(item);
-            setData.csvRows.push([modelName(group.modelId), group.modelId, objectId, identity.label, "ignored", ignoreCheck.reason, "", ""]);
-            checked++;
+            const identity = objectIdentity(objectId, flat);
+            const ignoredItem = {
+              modelId: group.modelId,
+              objectRuntimeId: objectId,
+              identity,
+              commonType: ignoreCheck.commonType,
+              reason: ignoreCheck.reason,
+              detectedSets: []
+            };
+            setData.ignoredItems.push(ignoredItem);
+            modelRecord.ignoredObjects.push(ignoredItem);
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "ignored_by_filter", (ignoreCheck.commonType || "") + (ignoreCheck.reason ? " | " + ignoreCheck.reason : ""), ""
+            ]);
+            setProgress((processed / totalObjects) * 100);
             continue;
           }
 
-          modelRecord.objectsChecked++;
+          const exactDetectedSets = detectKnownSets(flat);
+          const detectedSets = getAllDetectedSetNames(flat, exactDetectedSets);
+          const detectedLower = new Set(detectedSets.map(lower));
+          const exactDetectedLower = new Set(exactDetectedSets.map(lower));
+          const identity = objectIdentity(objectId, flat);
 
-          const exactDetected = detectExactRuleSets(flat);
-          const allDetected = detectAllRecognizedSets(flat);
+          const missingExactSets = requiredSets.filter(s => !exactDetectedLower.has(lower(s)));
+          const missingPartialSets = [];
+          const emptyPartialSets = [];
 
-          allDetected.forEach(s => modelRecord.setCounts.set(s, (modelRecord.setCounts.get(s) || 0) + 1));
+          partialRules.forEach(partialName => {
+            const matches = getMatchingPartialSets(detectedSets, partialName);
 
-          const missingExact = requiredSets.filter(s => !exactDetected.includes(s));
-          const missingPartial = [];
-          const emptyPartial = [];
-
-          partialRules.forEach(partial => {
-            const matches = matchingPartialSets(allDetected, partial);
             if (!matches.length) {
-              missingPartial.push(partial);
-            } else {
-              modelRecord.partialCounts.set(partial, (modelRecord.partialCounts.get(partial) || 0) + 1);
-              if (partialNonEmpty && !matches.some(setName => setHasNonEmptyValue(flat, setName))) emptyPartial.push(partial);
+              missingPartialSets.push(partialName);
+              return;
+            }
+
+            if (partialNonEmptyRequired && !matches.some(setName => setHasNonEmptyValue(flat, setName))) {
+              emptyPartialSets.push(partialName);
             }
           });
 
-          const missingAll = [
-            ...missingExact.map(s => "Exact: " + s),
-            ...missingPartial.map(s => "Partial: " + s),
-            ...emptyPartial.map(s => "Partial empty: " + s)
+          const missingSets = [
+            ...missingExactSets.map(s => "Exact: " + s),
+            ...missingPartialSets.map(s => "Partial: " + s),
+            ...emptyPartialSets.map(s => "Partial empty: " + s)
           ];
 
-          if (allDetected.length === 0) {
-            noKnown++;
-            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets: allDetected };
-            modelRecord.noKnownObjects.push(item);
-            setData.csvRows.push([modelName(group.modelId), group.modelId, objectId, identity.label, "no_known_set", "", "", ""]);
+          const extraSets = detectedSets.filter(setName =>
+            !isSetRequiredByExactOrPartial(setName, requiredSets, partialRules)
+          );
 
-            if ((requiredSets.length || partialRules.length) && !skipNoKnownAsMissing) {
-              missingAll.push(...requiredSets.map(s => "Exact: " + s));
-              missingAll.push(...partialRules.map(s => "Partial: " + s));
+          modelRecord.objectsChecked++;
+
+          detectedSets.forEach(setName => {
+            modelRecord.setCounts.set(setName, (modelRecord.setCounts.get(setName) || 0) + 1);
+          });
+
+          if (detectedSets.length === 0) {
+            noKnown++;
+            modelRecord.noKnownObjects.push({ modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets });
+
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "no_known_set", "", ""
+            ]);
+
+            if (hasAnyRequiredRule && !skipNoKnownAsMissing) {
+              requiredSets.forEach(setName => missingSets.push("Exact: " + setName));
+              partialRules.forEach(partialName => missingSets.push("Partial: " + partialName));
+            } else {
+              setProgress((processed / totalObjects) * 100);
+              continue;
             }
           }
 
-          if (missingAll.length) {
-            missing++;
-            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets: allDetected, missingSets: missingAll, commonType: getCommonType(flat) };
+          if (hasAnyRequiredRule && missingSets.length > 0) {
+            missingRequired++;
+            const item = {
+              modelId: group.modelId,
+              objectRuntimeId: objectId,
+              identity,
+              detectedSets,
+              missingSets,
+              commonType: getCommonType(flat)
+            };
             setData.missingItems.push(item);
             modelRecord.missingObjects.push(item);
-            setData.csvRows.push([modelName(group.modelId), group.modelId, objectId, identity.label, "missing_required_sets", missingAll.join(" | "), allDetected.join(" | "), ""]);
+
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "missing_required_sets", missingSets.join(" | "), detectedSets.join(" | ")
+            ]);
           } else {
-            if (requiredSets.length || partialRules.length) {
-              hasAll++;
-              setData.allRequiredItems.push({ modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets: allDetected });
+            if (hasAnyRequiredRule) {
+              hasAllRequired++;
+              const passItem = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets };
+              setData.allRequiredItems.push(passItem);
             }
           }
 
-          const requiredDetected = allDetected.filter(s => requiredSets.includes(s) || partialRules.some(p => normalizeText(s).includes(normalizeText(p))));
-          if ((requiredSets.length || partialRules.length) && missingAll.length === 0 && allDetected.length === requiredDetected.length) {
+          if (hasAnyRequiredRule && missingSets.length === 0 && extraSets.length === 0) {
             onlyRequired++;
-            modelRecord.onlyRequiredObjects.push({ modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets: allDetected });
+            const item = { modelId: group.modelId, objectRuntimeId: objectId, identity, detectedSets };
+            setData.onlyRequiredItems.push(item);
+            modelRecord.onlyRequiredObjects.push(item);
+
+            setData.csvRows.push([
+              modelName(group.modelId), group.modelId, objectId, identity.label,
+              "only_required_sets", [...requiredSets, ...partialRules.map(p => "Partial: " + p)].join(" | "), detectedSets.join(" | ")
+            ]);
           }
 
-          checked++;
+          setProgress((processed / totalObjects) * 100);
         }
 
-        setProgress((checked / Math.max(total,1)) * 100);
-        setStatus("Scanning attribute sets...\nProcessed " + checked + " of " + total + " objects.");
+        setStatus("Attribute set scan running...\nProcessed " + processed + " of " + totalObjects + " objects.");
         await pause(10);
       }
     }
 
-    updateSetSummary(checked, hasAll, missing, noKnown, onlyRequired, ignored);
+    if (!hasAnyRequiredRule) {
+      hasAllRequired = 0;
+      missingRequired = 0;
+      onlyRequired = 0;
+    }
+
+    updateSetSummary(totalObjects, hasAllRequired, missingRequired, onlyRequired, noKnown, ignored);
     renderSetReport(requiredSets, partialRules);
     setProgress(100);
+
     setStatus(
       "Attribute set scan complete.\n" +
-      "Required exact sets: " + (requiredSets.join(", ") || "-") + "\n" +
-      "Required partial set names: " + (partialRules.join(", ") || "-") + "\n" +
-      "No-known-set objects reported separately only: " + (skipNoKnownAsMissing ? "YES" : "NO")
+      "Required exact sets selected: " + (requiredSets.length ? requiredSets.join(", ") : "none") + "\n" +
+      "Required partial set names: " + (partialRules.length ? partialRules.join(", ") : "none") + "\n" +
+      "Partial sets require non-empty value: " + (partialNonEmptyRequired ? "YES" : "NO") + "\n" +
+      "No-known-set objects reported separately only: " + (skipNoKnownAsMissing ? "YES" : "NO") + "\n" +
+      "Objects found: " + totalObjects + "\n" +
+      "Missing required sets: " + missingRequired + "\n" +
+      "Objects with only required sets: " + onlyRequired + "\n" +
+      "Ignored by filter: " + ignored + "\n" +
+      "Objects with no known set: " + noKnown
     );
   } catch (error) {
     console.error(error);
-    setStatus("Set scan failed. " + errorMessage(error));
+    setStatus("Attribute set scan failed.\n\n" + errorMessage(error));
+    debug("Set scan error", { message: errorMessage(error), stack: error.stack });
   }
 }
 
-function updateSetSummary(objects, allReq, missing, noKnown, onlyRequired, ignored) {
-  document.getElementById("sObjects").textContent = objects;
-  document.getElementById("sAllRequired").textContent = allReq;
-  document.getElementById("sMissingRequired").textContent = missing;
-  document.getElementById("sNoKnown").textContent = noKnown;
-  document.getElementById("sOnlyRequired").textContent = onlyRequired;
-  document.getElementById("sIgnored").textContent = ignored;
+function ensureSetModelRecord(modelId) {
+  const key = String(modelId);
+  if (!setData.reportByModel.has(key)) {
+    setData.reportByModel.set(key, {
+      modelId,
+      modelName: modelName(modelId),
+      objectsChecked: 0,
+      setCounts: new Map(),
+      missingObjects: [],
+      onlyRequiredObjects: [],
+      noKnownObjects: [],
+      ignoredObjects: []
+    });
+  }
+  return setData.reportByModel.get(key);
 }
 
-function renderSetReport(requiredSets, partialRules) {
+function renderSetReport(requiredSets, partialRules = []) {
   const container = document.getElementById("setReport");
-  const models = Array.from(setData.reportByModel.values()).sort((a,b) => a.modelName.localeCompare(b.modelName));
-  const failed = models.filter(m => m.missingObjects.length || m.noKnownObjects.length);
-  const passed = models.filter(m => !m.missingObjects.length && !m.noKnownObjects.length);
+  container.innerHTML = "";
+
+  if (setData.reportByModel.size === 0) {
+    container.textContent = "No attribute set scan results.";
+    return;
+  }
+
+  const models = Array.from(setData.reportByModel.values())
+    .sort((a,b) => a.modelName.localeCompare(b.modelName));
+
+  // Pass/fail rule requested:
+  // PASS = 0 missing required and 0 no known set.
+  // "Only required sets" is warning/information only.
+  // Ignored objects do not affect pass/fail.
+  const failedModels = models.filter(model => model.missingObjects.length > 0 || model.noKnownObjects.length > 0);
+  const passedModels = models.filter(model => model.missingObjects.length === 0 && model.noKnownObjects.length === 0);
 
   container.innerHTML = `
     <div class="hint">
-      PASS means 0 missing required and 0 no known set. "Only required" is information only. Ignored objects do not affect pass/fail.
+      Model pass/fail rule: <b>PASS</b> means <b>0 missing required</b> and <b>0 no known set</b>.
+      Required rules can be exact sets from rules.json or partial set names such as <b>7_NVDB</b>.
+      <b>Only required sets</b> is shown as a warning/information item, not as a fail condition.
+      Ignored objects do not affect pass/fail.
     </div>
-    ${renderSetModelGroup("Models with problems", failed, "red", true)}
-    ${renderSetModelGroup("Models passed", passed, "good", false)}
+    ${renderSetModelGroup("Models with problems", failedModels, requiredSets, "red", true)}
+    ${renderSetModelGroup("Models passed", passedModels, requiredSets, "good", false)}
   `;
 }
 
-function renderSetModelGroup(title, models, badgeClass, open) {
-  const totals = models.reduce((a,m) => {
-    a.objects += m.objectsChecked; a.missing += m.missingObjects.length; a.noKnown += m.noKnownObjects.length;
-    a.only += m.onlyRequiredObjects.length; a.ignored += m.ignoredObjects.length; return a;
-  }, {objects:0, missing:0, noKnown:0, only:0, ignored:0});
+function renderSetModelGroup(title, models, requiredSets, badgeClass, openByDefault) {
+  const totalObjects = models.reduce((sum, model) => sum + model.objectsChecked, 0);
+  const totalMissing = models.reduce((sum, model) => sum + model.missingObjects.length, 0);
+  const totalNoKnown = models.reduce((sum, model) => sum + model.noKnownObjects.length, 0);
+  const totalOnlyRequired = models.reduce((sum, model) => sum + model.onlyRequiredObjects.length, 0);
+  const totalIgnored = models.reduce((sum, model) => sum + model.ignoredObjects.length, 0);
 
   return `
-    <details class="model-group" ${open ? "open" : ""}>
+    <details class="model-group" ${openByDefault ? "open" : ""}>
       <summary class="report-summary">
         <span class="report-name">${escapeHtml(title)}</span>
         <span class="report-tags">
           <span class="badge ${badgeClass}">${models.length} model(s)</span>
-          <span class="badge blue">${totals.objects} checked</span>
-          <span class="badge red">${totals.missing} missing</span>
-          <span class="badge orange">${totals.noKnown} no known</span>
-          <span class="badge orange">${totals.only} only required</span>
-          <span class="badge blue">${totals.ignored} ignored</span>
+          <span class="badge blue">${totalObjects} checked object(s)</span>
+          <span class="badge red">${totalMissing} missing required</span>
+          <span class="badge orange">${totalNoKnown} no known set</span>
+          <span class="badge orange">${totalOnlyRequired} only required set(s)</span>
+          <span class="badge blue">${totalIgnored} ignored</span>
         </span>
       </summary>
-      <div class="detail-body">${models.length ? models.map(renderOneSetModel).join("") : `<div class="hint">None.</div>`}</div>
+      <div class="detail-body">
+        ${models.length ? models.map(model => renderOneSetModel(model, requiredSets)).join("") : `<div class="hint">None.</div>`}
+      </div>
     </details>
   `;
 }
 
-function renderOneSetModel(model) {
-  const fail = model.missingObjects.length || model.noKnownObjects.length;
-  const statusBadge = fail ? `<span class="badge red">FAIL</span>` : `<span class="badge good">PASS</span>`;
-  const setRows = Array.from(model.setCounts.entries()).sort((a,b) => a[0].localeCompare(b[0]))
-    .map(([s,c]) => `<tr><td>${escapeHtml(s)}</td><td>${c}</td></tr>`).join("");
+function renderOneSetModel(model, requiredSets) {
+  const hasProblems = model.missingObjects.length > 0 || model.noKnownObjects.length > 0;
+  const statusBadge = hasProblems
+    ? `<span class="badge red">FAIL</span>`
+    : `<span class="badge good">PASS</span>`;
+
+  const onlyRequiredBadge = model.onlyRequiredObjects.length
+    ? `<span class="badge orange">${model.onlyRequiredObjects.length} only required set(s)</span>`
+    : `<span class="badge orange">0 only required set(s)</span>`;
+
+  const setCountRows = Array.from(model.setCounts.entries())
+    .sort((a,b) => a[0].localeCompare(b[0]))
+    .map(([setName, count]) => `<tr><td>${escapeHtml(setName)}</td><td>${count}</td></tr>`)
+    .join("");
+
+  const onlyRequiredSection = requiredSets.length
+    ? renderObjectList("Objects with only required sets", model.onlyRequiredObjects, "orange")
+    : `<h4>Objects with only required sets</h4><div class="hint">No required sets were selected, so "only required sets" is not shown.</div>`;
 
   return `
     <details class="model">
-      <summary class="report-summary">
-        <span class="report-name">${escapeHtml(model.modelName)}</span>
+      <summary class="report-summary model-summary-row">
+        <span class="report-name model-name">${escapeHtml(model.modelName)}</span>
         <span class="report-tags">
           <span class="badge blue">${model.objectsChecked} object(s)</span>
           <span class="badge red">${model.missingObjects.length} missing required</span>
           <span class="badge orange">${model.noKnownObjects.length} no known set</span>
-          <span class="badge orange">${model.onlyRequiredObjects.length} only required</span>
+          ${onlyRequiredBadge}
           <span class="badge blue">${model.ignoredObjects.length} ignored</span>
           ${statusBadge}
         </span>
       </summary>
       <div class="detail-body">
         <h4>Detected set counts</h4>
-        <table><thead><tr><th>Attribute set</th><th>Objects with this set</th></tr></thead><tbody>${setRows || `<tr><td colspan="2">No known sets detected.</td></tr>`}</tbody></table>
+        <table>
+          <thead><tr><th>Attribute set</th><th>Objects with this set</th></tr></thead>
+          <tbody>
+            ${setCountRows || `<tr><td colspan="2">No known sets detected.</td></tr>`}
+          </tbody>
+        </table>
+
         ${renderMissingList(model.missingObjects)}
-        ${renderObjectList("Objects with only required sets", model.onlyRequiredObjects, "orange")}
+        ${onlyRequiredSection}
         ${renderIgnoredList(model.ignoredObjects)}
         ${renderObjectList("Objects with no known set", model.noKnownObjects, "orange")}
       </div>
@@ -861,292 +1655,748 @@ function renderOneSetModel(model) {
 
 function renderMissingList(items) {
   if (!items.length) return `<h4>Objects missing required sets</h4><div class="hint">None.</div>`;
+
   return `
     <details class="object" open>
       <summary>Objects missing required sets <span class="badge red">${items.length}</span></summary>
       <div class="detail-body">
-        <table><thead><tr><th>Object</th><th>Missing / empty requirements</th><th>Detected sets</th><th>Action</th></tr></thead>
-        <tbody>${items.map(item => `
-          <tr>
-            <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
-            <td class="problem">${escapeHtml(item.missingSets.join(", "))}</td>
-            <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
-            <td><button class="small btn-secondary" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
-          </tr>`).join("")}</tbody></table>
+        <div class="${items.length > 100 ? "scroll-table" : ""}">
+          <table>
+            <thead><tr><th>Object</th><th>Missing sets / partial rules</th><th>Detected sets</th><th>Action</th></tr></thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}${item.commonType ? " | Common Type: " + escapeHtml(item.commonType) : ""}</span></td>
+                  <td class="problem">${escapeHtml(item.missingSets.join(", "))}</td>
+                  <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
+                  <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div class="hint">Showing all ${items.length} object(s). Use the scroll box if the list is long.</div>
       </div>
-    </details>`;
+    </details>
+  `;
 }
 
 function renderIgnoredList(items) {
   if (!items.length) return `<h4>Objects ignored by filter</h4><div class="hint">None.</div>`;
+
   const counts = new Map();
-  items.forEach(item => counts.set(item.reason || "Unknown", (counts.get(item.reason || "Unknown") || 0) + 1));
-  const reasonRows = Array.from(counts.entries()).sort((a,b) => a[0].localeCompare(b[0])).map(([r,c]) => `<tr><td>${escapeHtml(r)}</td><td>${c}</td></tr>`).join("");
+  items.forEach(item => {
+    const label = item.reason || (item.commonType ? "Common Type: " + item.commonType : "Unknown");
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+
+  const reasonRows = Array.from(counts.entries())
+    .sort((a,b) => a[0].localeCompare(b[0]))
+    .map(([reason, count]) => `<tr><td>${escapeHtml(reason)}</td><td>${count}</td></tr>`)
+    .join("");
+
   const objectRows = items.map(item => `
     <tr>
-      <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
-      <td>${escapeHtml(item.reason || "-")}</td>
-      <td><button class="small btn-secondary" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
-    </tr>`).join("");
+      <td>${escapeHtml(item.identity ? item.identity.label : "Object " + item.objectRuntimeId)}<br><span class="small-text">${escapeHtml(item.identity ? item.identity.description : "")}</span></td>
+      <td>${escapeHtml(item.reason || item.commonType || "-")}</td>
+      <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
+    </tr>
+  `).join("");
+
   return `
     <details class="object">
       <summary>Objects ignored by filter <span class="badge blue">${items.length}</span></summary>
       <div class="detail-body">
         <h4>Summary by ignore reason</h4>
-        <table><thead><tr><th>Ignore reason</th><th>Ignored objects</th></tr></thead><tbody>${reasonRows}</tbody></table>
+        <table>
+          <thead><tr><th>Ignore reason</th><th>Ignored objects</th></tr></thead>
+          <tbody>${reasonRows}</tbody>
+        </table>
+
         <h4>Ignored object list</h4>
         <div class="hint">Showing all ${items.length} ignored object(s). Use the scroll box if the list is long.</div>
         <div class="${items.length > 100 ? "scroll-table" : ""}">
-          <table><thead><tr><th>Object</th><th>Ignore reason</th><th>Action</th></tr></thead><tbody>${objectRows}</tbody></table>
+          <table>
+            <thead><tr><th>Object</th><th>Ignore reason</th><th>Action</th></tr></thead>
+            <tbody>${objectRows}</tbody>
+          </table>
         </div>
+
+        <div class="hint">These objects were skipped before checking because they matched the ignored Common Type list, ignored property group/path keyword list, or ignored Product/root name list.</div>
       </div>
-    </details>`;
+    </details>
+  `;
 }
+
 
 function renderObjectList(title, items, badgeColor) {
   if (!items.length) return `<h4>${escapeHtml(title)}</h4><div class="hint">None.</div>`;
+
   return `
     <details class="object">
       <summary>${escapeHtml(title)} <span class="badge ${badgeColor}">${items.length}</span></summary>
       <div class="detail-body">
-        <div class="${items.length > 100 ? "scroll-table" : ""}">
-          <table><thead><tr><th>Object</th><th>Detected sets</th><th>Action</th></tr></thead>
-          <tbody>${items.map(item => `
-            <tr>
-              <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
-              <td>${escapeHtml((item.detectedSets || []).join(", ") || "-")}</td>
-              <td><button class="small btn-secondary" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
-            </tr>`).join("")}</tbody></table>
-        </div>
-      </div>
-    </details>`;
-}
-
-async function runValueScan() {
-  try {
-    if (!API) return setStatus("API is not connected yet.");
-    clearValueReport();
-    await loadModelNames();
-    setStatus("Getting objects for value scan...");
-    const groups = normalizeObjectGroups(await API.viewer.getObjects());
-    valueData.allGroups = groups;
-
-    let checked = 0, failed = 0, passed = 0;
-    const total = countGroupObjects(groups);
-
-    for (const group of groups) {
-      for (const chunk of chunkArray(group.objectRuntimeIds, 100)) {
-        const props = await getObjectPropertiesRobust(group.modelId, chunk);
-        for (let i=0; i<chunk.length; i++) {
-          const objectId = chunk[i];
-          const raw = props[i] || {};
-          const flat = flattenProperties(raw);
-          if (shouldIgnoreObject(flat).ignore) continue;
-
-          const identity = objectIdentity(flat, group.modelId, objectId);
-          const exactDetected = detectExactRuleSets(flat);
-          const problems = [];
-
-          rules.sets.forEach(setRule => {
-            const setName = getSetName(setRule);
-            if (!exactDetected.includes(setName)) return;
-            (setRule.attributes || []).forEach(attr => {
-              const attrName = attr.name || attr.attributeName || attr.property || "";
-              if (!attrName) return;
-              const path = setName + "." + attrName;
-              const found = findProperty(flat, path, attrName);
-              const result = checkValue(found.exists ? found.value : "", attr, found.exists);
-              if (result.status !== "correct") problems.push({ path, message: result.message, value: result.actualValue });
-            });
-          });
-
-          if (problems.length) {
-            failed++;
-            valueData.failItems.push({ modelId: group.modelId, objectRuntimeId: objectId, identity, problems });
-            valueData.csvRows.push([modelName(group.modelId), group.modelId, objectId, identity.label, problems.map(p => p.path).join(" | "), problems.map(p => p.value).join(" | "), problems.map(p => p.message).join(" | ")]);
-          } else {
-            passed++;
-            valueData.passItems.push({ modelId: group.modelId, objectRuntimeId: objectId, identity });
-          }
-          checked++;
-        }
-        setProgress((checked / Math.max(total,1)) * 100);
-        setStatus("Value scan: processed " + checked + " of " + total + " objects.");
-        await pause(10);
-      }
-    }
-
-    renderValueReport();
-    setProgress(100);
-    setStatus("Value scan complete. Failed objects: " + failed + ". Passed objects: " + passed + ".");
-  } catch(error) {
-    console.error(error);
-    setStatus("Value scan failed. " + errorMessage(error));
-  }
-}
-
-function findProperty(flat, fullPath, fallbackName) {
-  const keys = Object.keys(flat || {});
-  const wanted = fullPath.toLowerCase();
-  for (const key of keys) if (key.toLowerCase() === wanted || key.toLowerCase().endsWith("." + wanted)) return { exists:true, value:flat[key] };
-  const fallback = fallbackName.toLowerCase();
-  for (const key of keys) if (key.split(".").pop().toLowerCase() === fallback) return { exists:true, value:flat[key] };
-  return { exists:false, value:"" };
-}
-
-function checkValue(value, rule, exists) {
-  if (!exists) return { status:"missing", actualValue:"", message:"Missing attribute." };
-  const text = String(value ?? "").trim();
-  const checkType = rule.checkType || rule.format || rule.type || "anyText";
-  if (checkType === "anyText" || checkType === "text") {
-    if (!text) return { status:"missing", actualValue:text, message:"Empty value." };
-    return { status:"correct", actualValue:text, message:"Text exists." };
-  }
-  if (checkType === "anyValue") return text ? {status:"correct", actualValue:text, message:"Value exists."} : {status:"missing", actualValue:text, message:"Empty value."};
-  const allowed = (rule.acceptedValues || rule.values || []).map(v => String(v).trim().toLowerCase());
-  if (allowed.length) return allowed.includes(text.toLowerCase()) ? {status:"correct", actualValue:text, message:"Allowed value."} : {status:"incorrect", actualValue:text, message:"Value is not allowed."};
-  return text ? {status:"correct", actualValue:text, message:"Value exists."} : {status:"missing", actualValue:text, message:"Empty value."};
-}
-
-function renderValueReport() {
-  const container = document.getElementById("valueReport");
-  if (!valueData.failItems.length) {
-    container.innerHTML = `<div class="hint">No value problems found.</div>`;
-    return;
-  }
-  const byModel = new Map();
-  valueData.failItems.forEach(item => {
-    const key = String(item.modelId);
-    if (!byModel.has(key)) byModel.set(key, []);
-    byModel.get(key).push(item);
-  });
-  container.innerHTML = Array.from(byModel.entries()).map(([modelId, items]) => `
-    <details class="model" open>
-      <summary class="report-summary">
-        <span class="report-name">${escapeHtml(modelName(modelId))}</span>
-        <span class="report-tags"><span class="badge red">${items.length} failed object(s)</span></span>
-      </summary>
-      <div class="detail-body">
-        <table><thead><tr><th>Object</th><th>Problems</th><th>Action</th></tr></thead>
-        <tbody>${items.map(item => `
-          <tr>
-            <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
-            <td>${item.problems.map(p => `<div class="problem">${escapeHtml(p.path)}: ${escapeHtml(p.message)} (${escapeHtml(p.value)})</div>`).join("")}</td>
-            <td><button class="small btn-secondary" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
-          </tr>`).join("")}</tbody></table>
+        <table>
+          <thead><tr><th>Object</th><th>Detected sets</th><th>Action</th></tr></thead>
+          <tbody>
+            ${items.slice(0,500).map(item => `
+              <tr>
+                <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
+                <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
+                <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        ${items.length > 500 ? `<div class="hint">Showing first 500 objects. Use CSV export for the full list.</div>` : ""}
       </div>
     </details>
-  `).join("");
+  `;
 }
 
-function clearSetReport() {
-  setData = emptySetData();
-  updateSetSummary(0,0,0,0,0,0);
-  document.getElementById("setReport").textContent = "No attribute set scan run yet.";
+
+function detectKnownSets(flat) {
+  const keys = Object.keys(flat);
+  const detected = [];
+
+  for (const set of rules.sets) {
+    const prefix = lower(set.name) + ".";
+    const found = keys.some(key => lower(key).includes(prefix));
+    if (found) detected.push(set.name);
+  }
+
+  return detected;
 }
-function clearValueReport() {
-  valueData = emptyValueData();
-  document.getElementById("valueReport").textContent = "No value scan run yet.";
+
+function evaluateRule(rule, flat) {
+  const lookup = getPropertyValue(flat, rule.path, rule.name);
+
+  if (!lookup.exists || isBlank(lookup.value)) {
+    if (rule.required !== false) {
+      return { status: "missing", actualValue: "", message: "Required attribute is missing or empty." };
+    }
+    return { status: "correct", actualValue: "", message: "Optional attribute is empty." };
+  }
+
+  const textValue = String(lookup.value).trim();
+  const checkType = rule.checkType || "text";
+
+  if (checkType === "text") return { status: "correct", actualValue: textValue, message: "Text value exists." };
+
+  if (checkType === "number") {
+    return isFiniteNumber(textValue)
+      ? { status: "correct", actualValue: textValue, message: "Number value exists." }
+      : { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+  }
+
+  if (checkType === "list") {
+    const allowed = (rule.acceptedValues || []).map(v => String(v).trim().toLowerCase());
+    return allowed.includes(textValue.toLowerCase())
+      ? { status: "correct", actualValue: textValue, message: "Value is in accepted text list." }
+      : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted text list." };
+  }
+
+  if (checkType === "numberList") {
+    if (!isFiniteNumber(textValue)) return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+
+    const numberValue = Number(String(textValue).replace(",", "."));
+    const allowedNumbers = (rule.acceptedValues || [])
+      .filter(v => isFiniteNumber(v))
+      .map(v => Number(String(v).replace(",", ".")));
+
+    return allowedNumbers.includes(numberValue)
+      ? { status: "correct", actualValue: textValue, message: "Value is in accepted number list." }
+      : { status: "incorrect", actualValue: textValue, message: "Value is not in accepted number list." };
+  }
+
+  if (checkType === "numberRange") {
+    if (!isFiniteNumber(textValue)) return { status: "incorrect", actualValue: textValue, message: "Value is not a number." };
+
+    const n = Number(String(textValue).replace(",", "."));
+    const min = rule.min === "" || rule.min === undefined ? -Infinity : Number(String(rule.min).replace(",", "."));
+    const max = rule.max === "" || rule.max === undefined ? Infinity : Number(String(rule.max).replace(",", "."));
+
+    return n >= min && n <= max
+      ? { status: "correct", actualValue: textValue, message: "Number is inside range." }
+      : { status: "incorrect", actualValue: textValue, message: "Number is outside range." };
+  }
+
+  if (checkType === "yesNo") {
+    const allowed = ["yes", "no", "true", "false", "1", "0"];
+    return allowed.includes(textValue.toLowerCase())
+      ? { status: "correct", actualValue: textValue, message: "Yes/no value accepted." }
+      : { status: "incorrect", actualValue: textValue, message: "Expected yes/no, true/false, or 1/0." };
+  }
+
+  if (checkType === "date") {
+    return Number.isNaN(Date.parse(textValue))
+      ? { status: "incorrect", actualValue: textValue, message: "Value does not look like a date." }
+      : { status: "correct", actualValue: textValue, message: "Date-like value exists." };
+  }
+
+  return { status: "correct", actualValue: textValue, message: "No specific check type matched." };
 }
-function clearAllReports() {
-  clearSetReport();
-  clearValueReport();
-  setProgress(0);
-  setStatus("Reports cleared.");
+
+async function loadModelNames() {
+  modelNameById = new Map();
+
+  try {
+    const models = await API.viewer.getModels();
+    if (Array.isArray(models)) {
+      models.forEach(model => {
+        const id = model.id || model.modelId || model.versionId;
+        if (id) modelNameById.set(String(id), model.name || model.fileName || String(id));
+      });
+    }
+  } catch (error) {
+    console.warn("Could not load model names.", error);
+  }
+}
+
+function normalizeObjectGroups(raw) {
+  if (!raw) return [];
+  const groups = [];
+
+  if (Array.isArray(raw)) {
+    raw.forEach(item => {
+      if (!item) return;
+      const modelId = item.modelId || item.id || item.model;
+      let ids = [];
+
+      if (Array.isArray(item.objectRuntimeIds)) ids = item.objectRuntimeIds;
+      else if (Array.isArray(item.objects)) ids = item.objects.map(o => typeof o === "number" ? o : o.id).filter(id => id !== undefined && id !== null);
+      else if (Array.isArray(item.ids)) ids = item.ids;
+
+      ids = ids.map(id => Number(id)).filter(id => Number.isFinite(id));
+
+      if (modelId && ids.length) {
+        groups.push({ modelId: String(modelId), objectRuntimeIds: ids });
+      }
+    });
+  } else if (Array.isArray(raw.modelObjectIds)) {
+    raw.modelObjectIds.forEach(item => {
+      const modelId = item.modelId || item.id || item.model;
+      const ids = (item.objectRuntimeIds || item.ids || []).map(Number).filter(Number.isFinite);
+      if (modelId && ids.length) groups.push({ modelId: String(modelId), objectRuntimeIds: ids });
+    });
+  }
+
+  return groups;
+}
+
+async function getObjectPropertiesRobust(modelId, ids) {
+  try {
+    return await API.viewer.getObjectProperties(modelId, ids);
+  } catch (firstError) {
+    try {
+      return await API.viewer.getObjectProperties({ modelId, objectRuntimeIds: ids });
+    } catch (secondError) {
+      debug("getObjectProperties failed", {
+        modelId, idsPreview: ids.slice(0, 10),
+        firstError: errorMessage(firstError),
+        secondError: errorMessage(secondError)
+      });
+      throw secondError;
+    }
+  }
+}
+
+function mapPropertiesToIds(batchIds, properties) {
+  const map = new Map();
+  if (!Array.isArray(properties)) return map;
+
+  properties.forEach((props, index) => {
+    const possibleId = props && (props.id ?? props.objectRuntimeId ?? props.runtimeId);
+    const id = possibleId !== undefined && possibleId !== null ? possibleId : batchIds[index];
+    map.set(String(id), props);
+  });
+
+  return map;
+}
+
+function flattenProperties(object) {
+  const output = {};
+
+  function add(path, value) {
+    if (!path) return;
+    if (value === undefined || value === null) return;
+    if (typeof value === "object") return;
+    output[path] = String(value);
+  }
+
+  function walk(node, prefix) {
+    if (node === null || node === undefined) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(item => walk(item, prefix));
+      return;
+    }
+
+    if (typeof node !== "object") {
+      add(prefix, node);
+      return;
+    }
+
+    const possibleName = node.name || node.Name || node.key || node.Key || node.displayName || node.label;
+    const possibleValue = node.value ?? node.Value ?? node.val ?? node.text ?? node.Text;
+    const currentPath = possibleName ? (prefix ? prefix + "." + possibleName : String(possibleName)) : prefix;
+
+    if (possibleName && possibleValue !== undefined && possibleValue !== null && typeof possibleValue !== "object") {
+      add(currentPath, possibleValue);
+    }
+
+    const childCollections = [
+      node.properties, node.Properties, node.children, node.Children, node.items, node.Items,
+      node.propertySets, node.PropertySets, node.parameters, node.Parameters
+    ];
+
+    childCollections.forEach(children => {
+      if (children) walk(children, currentPath);
+    });
+
+    Object.keys(node).forEach(key => {
+      if ([
+        "name", "Name", "key", "Key", "displayName", "label", "value", "Value", "val", "text", "Text",
+        "properties", "Properties", "children", "Children", "items", "Items",
+        "propertySets", "PropertySets", "parameters", "Parameters"
+      ].includes(key)) return;
+
+      const value = node[key];
+      if (value === undefined || value === null) return;
+
+      const newPath = prefix ? prefix + "." + key : key;
+      if (typeof value === "object") walk(value, newPath);
+      else add(newPath, value);
+    });
+  }
+
+  walk(object, "");
+  return output;
+}
+
+function getPropertyValue(flat, fullPath, fallbackName) {
+  const keys = Object.keys(flat);
+  const normFull = lower(fullPath);
+  const normFallback = lower(fallbackName);
+
+  for (const key of keys) {
+    if (lower(key) === normFull) return { exists: true, value: flat[key], matchedPath: key };
+  }
+
+  for (const key of keys) {
+    if (lower(key).endsWith("." + normFull)) return { exists: true, value: flat[key], matchedPath: key };
+  }
+
+  if (fallbackName) {
+    for (const key of keys) {
+      if (lower(key).split(".").pop() === normFallback) return { exists: true, value: flat[key], matchedPath: key };
+    }
+  }
+
+  return { exists: false, value: "", matchedPath: "" };
+}
+
+function objectIdentity(objectId, flat) {
+  const guidKeys = Object.keys(flat).filter(key => lower(key).includes("guid"));
+  const ifcKey = guidKeys.find(key => lower(key).includes("ifc"));
+  const mmsKey = guidKeys.find(key => lower(key).includes("mms"));
+  const chosen = ifcKey || mmsKey || guidKeys[0];
+
+  if (chosen) {
+    return {
+      label: flat[chosen],
+      description: chosen + " = " + flat[chosen]
+    };
+  }
+
+  return {
+    label: "Runtime " + objectId,
+    description: "No GUID-like property found. Using Trimble runtime object ID."
+  };
+}
+
+async function debugSelectedCommonType() {
+  try {
+    ensureReady();
+
+    const selection = await API.viewer.getSelection();
+    const groups = normalizeObjectGroups(selection && selection.modelObjectIds ? selection.modelObjectIds : selection);
+
+    if (!groups.length) {
+      setStatus("Select one object in the viewer first, then press Debug selected Common Type.");
+      return;
+    }
+
+    const group = groups[0];
+    const objectId = group.objectRuntimeIds[0];
+    const props = await getObjectPropertiesRobust(group.modelId, [objectId]);
+    const raw = Array.isArray(props) ? props[0] : props;
+    const flat = raw ? flattenProperties(raw) : {};
+
+    const flatCommonType = getCommonType(flat);
+    const rawCommonType = getCommonTypeFromRaw(raw);
+    const keywordMatch = getPropertyPathKeywordMatch(flat, raw);
+    const productRootMatch = getProductRootNameMatch(flat, raw);
+    const ignoreCheck = shouldIgnoreObject(flat, raw);
+
+    debug("Selected object ignore filter debug", {
+      modelId: group.modelId,
+      objectRuntimeId: objectId,
+      flatCommonType,
+      rawCommonType,
+      keywordMatch,
+      productRootMatch,
+      finalCommonType: ignoreCheck.commonType,
+      ignoreReason: ignoreCheck.reason,
+      ignoredTypes: getIgnoredCommonTypes(),
+      ignoredPathKeywords: getIgnoredPathKeywords(),
+      ignoredProductRootNames: getIgnoredProductRootNames(),
+      willIgnore: ignoreCheck.ignore,
+      flattenedKeysContainingCommonTypeIfcOrReference: Object.keys(flat).filter(k => {
+        const kk = lower(k);
+        return kk.includes("common") || kk.includes("type") || kk.includes("ifc") || kk.includes("reference");
+      }).slice(0, 150),
+      flattenedPropertiesSample: Object.fromEntries(
+        Object.entries(flat).filter(([k]) => {
+          const kk = lower(k);
+          return kk.includes("common") || kk.includes("type") || kk.includes("reference");
+        }).slice(0, 100)
+      ),
+      rawPreview: raw
+    });
+
+    setStatus(
+      "Selected object Common Type debug complete.\n" +
+      "Flat Common Type: " + (flatCommonType || "-") + "\n" +
+      "Raw Common Type: " + (rawCommonType || "-") + "\n" +
+      "Keyword match: " + (keywordMatch || "-") + "\n" +
+      "Product/root match: " + (productRootMatch || "-") + "\n" +
+      "Will ignore: " + (ignoreCheck.ignore ? "YES" : "NO") + "\n" +
+      "Reason: " + (ignoreCheck.reason || "-") + "\n\n" +
+      "Open Debug output at the bottom if this still looks wrong."
+    );
+  } catch (error) {
+    setStatus("Debug selected Common Type failed.\n\n" + errorMessage(error));
+  }
 }
 
 async function selectOneObject(modelId, objectId) {
   try {
-    if (!API) return;
-    const selector = { modelObjectIds: [{ modelId, objectRuntimeIds: [Number(objectId)] }] };
-    if (API.viewer.setSelection) await API.viewer.setSelection(selector);
-    else await API.viewer.setObjectState(selector, { selected:true });
-    setStatus("Selected object " + objectId + ".");
-  } catch(error) {
-    setStatus("Could not select object. " + errorMessage(error));
+    ensureReady();
+    await API.viewer.setSelection({
+      modelObjectIds: [{
+        modelId: String(modelId),
+        objectRuntimeIds: [Number(objectId)]
+      }]
+    }, "set");
+    setStatus("Selected object " + objectId + " in model " + modelName(modelId) + ".");
+  } catch (error) {
+    setStatus("Could not select object.\n\n" + errorMessage(error));
   }
 }
+
+function subtractItemsFromGroups(allGroups, keepItems) {
+  const keepByModel = new Map();
+
+  keepItems.forEach(item => {
+    const key = String(item.modelId);
+    if (!keepByModel.has(key)) keepByModel.set(key, new Set());
+    keepByModel.get(key).add(Number(item.objectRuntimeId));
+  });
+
+  return allGroups.map(group => {
+    const keepSet = keepByModel.get(String(group.modelId)) || new Set();
+    const hideIds = group.objectRuntimeIds
+      .map(Number)
+      .filter(id => Number.isFinite(id) && !keepSet.has(id));
+
+    return {
+      modelId: group.modelId,
+      objectRuntimeIds: hideIds
+    };
+  }).filter(group => group.objectRuntimeIds.length > 0);
+}
+
+function chunkArray(array, size) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) chunks.push(array.slice(i, i + size));
+  return chunks;
+}
+
+async function setVisibilityForGroupsBatched(groups, visible, label) {
+  const objectBatchSize = 250;
+  let total = groups.reduce((sum, group) => sum + group.objectRuntimeIds.length, 0);
+  let done = 0;
+
+  for (const group of groups) {
+    const chunks = chunkArray(group.objectRuntimeIds, objectBatchSize);
+
+    for (const ids of chunks) {
+      await API.viewer.setObjectState(
+        { modelObjectIds: [{ modelId: group.modelId, objectRuntimeIds: ids }] },
+        { visible }
+      );
+
+      done += ids.length;
+      setStatus(label + "\nProcessed visibility for " + done + " of " + total + " objects.");
+      await pause(25);
+    }
+  }
+}
+
+async function hideItemsSafely(itemsToHide, label) {
+  if (!itemsToHide.length) {
+    setStatus("No passing objects found to hide for: " + label);
+    return;
+  }
+
+  const hideByModel = new Map();
+  itemsToHide.forEach(item => {
+    const key = String(item.modelId);
+    if (!hideByModel.has(key)) hideByModel.set(key, []);
+    hideByModel.get(key).push(Number(item.objectRuntimeId));
+  });
+
+  const hideGroups = Array.from(hideByModel.entries()).map(([modelId, ids]) => ({
+    modelId,
+    objectRuntimeIds: ids.filter(id => Number.isFinite(id))
+  })).filter(group => group.objectRuntimeIds.length > 0);
+
+  const hideCount = hideGroups.reduce((sum, group) => sum + group.objectRuntimeIds.length, 0);
+
+  if (!confirm(
+    "This will hide " + hideCount + " object(s) that passed the check.\n\n" +
+    "Objects that failed, objects with no known set, and ignored container/root objects will not be hidden by this command.\n\n" +
+    "Continue?"
+  )) {
+    return;
+  }
+
+  setProgress(0);
+  setStatus("Preparing to hide passing objects for " + label + "...");
+
+  // Important:
+  // Do NOT hide everything first. In some models, hiding parent/root/container
+  // objects can also hide the failed child objects. We only hide confirmed
+  // passing objects and leave the rest untouched.
+  await setVisibilityForGroupsBatched(hideGroups, false, "Hiding passing objects for " + label + "...");
+
+  setProgress(100);
+  setStatus(
+    "Done. Hidden passing objects for " + label + ".\n\n" +
+    "If some non-problem container/root objects remain visible, that is intentional. It avoids hiding failed objects through their parent hierarchy."
+  );
+}
+
+
+async function showOnlyValueFailures() {
+  try {
+    ensureReady();
+    if (!valueData.failItems.length) return setStatus("No failed value-check objects to show.");
+    if (!valueData.passItems.length) return setStatus("No passed value-check objects found to hide. Run the value scan first.");
+
+    await hideItemsSafely(valueData.passItems, "failed value-check objects");
+  } catch (error) {
+    setStatus("Could not hide passing value-check objects.\n\n" + errorMessage(error));
+  }
+}
+
+
+async function showOnlySetProblems() {
+  try {
+    ensureReady();
+    if (!setData.missingItems.length) return setStatus("No objects missing required sets to show.");
+    if (!setData.allRequiredItems.length) return setStatus("No objects with all required sets found to hide. Run the set scan first.");
+
+    await hideItemsSafely(setData.allRequiredItems, "objects missing required sets");
+  } catch (error) {
+    setStatus("Could not hide objects that passed the required-set check.\n\n" + errorMessage(error));
+  }
+}
+
 
 async function showAllObjects() {
   try {
-    if (!API) return;
-    await API.viewer.setObjectState(undefined, { visible:true, color:"reset" });
+    ensureReady();
+    await API.viewer.setObjectState(undefined, { visible: true });
     setStatus("All objects shown again.");
-  } catch(error) {
-    setStatus("Could not show all objects. " + errorMessage(error));
+  } catch (error) {
+    setStatus("Could not show all objects.\n\n" + errorMessage(error));
   }
 }
 
-async function hidePassedSetObjects() { await hideItems(setData.allRequiredItems, "objects that pass set check"); }
-async function hidePassedValueObjects() { await hideItems(valueData.passItems, "objects that pass value check"); }
+function groupByModel(items) {
+  const map = new Map();
+  items.forEach(item => {
+    const key = String(item.modelId);
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key).add(Number(item.objectRuntimeId));
+  });
+  return Array.from(map.entries()).map(([modelId, ids]) => ({ modelId, objectRuntimeIds: Array.from(ids) }));
+}
 
-async function hideItems(items, label) {
-  try {
-    if (!items.length) return setStatus("No " + label + " found to hide.");
-    if (!confirm("This will hide " + items.length + " " + label + ". Continue?")) return;
+function updateValueSummary(objects, checked, passed, failed, noKnown, ignored = 0) {
+  document.getElementById("vObjects").textContent = objects;
+  document.getElementById("vChecked").textContent = checked;
+  document.getElementById("vPassed").textContent = passed;
+  document.getElementById("vFailed").textContent = failed;
+  document.getElementById("vIgnored").textContent = ignored;
+  document.getElementById("vNoKnown").textContent = noKnown;
+}
 
-    const byModel = new Map();
-    items.forEach(item => {
-      const key = String(item.modelId);
-      if (!byModel.has(key)) byModel.set(key, []);
-      byModel.get(key).push(Number(item.objectRuntimeId));
-    });
+function updateSetSummary(objects, allRequired, missingRequired, onlyRequired, noKnown, ignored = 0) {
+  document.getElementById("sObjects").textContent = objects;
+  document.getElementById("sAllRequired").textContent = allRequired;
+  document.getElementById("sMissingRequired").textContent = missingRequired;
+  document.getElementById("sOnlyRequired").textContent = onlyRequired;
+  document.getElementById("sIgnored").textContent = ignored;
+  document.getElementById("sNoKnown").textContent = noKnown;
+}
 
-    let done = 0;
-    for (const [modelId, ids] of byModel.entries()) {
-      for (const chunk of chunkArray(ids, 250)) {
-        await API.viewer.setObjectState({ modelObjectIds: [{ modelId, objectRuntimeIds: chunk }] }, { visible:false });
-        done += chunk.length;
-        setStatus("Hiding " + label + ": " + done + " of " + items.length + ".");
-        await pause(25);
-      }
-    }
-    setStatus("Done hiding " + label + ".");
-  } catch(error) {
-    setStatus("Could not hide objects. " + errorMessage(error));
-  }
+function clearAllReports() {
+  clearValueReport();
+  clearSetReport();
+  setProgress(0);
+  setStatus("Reports cleared.");
+}
+
+function clearValueReport() {
+  valueData = emptyValueData();
+  updateValueSummary(0,0,0,0,0);
+  document.getElementById("valueReport").textContent = "No value scan run yet.";
+}
+
+function clearSetReport() {
+  setData = emptySetData();
+  updateSetSummary(0,0,0,0,0);
+  document.getElementById("setReport").textContent = "No attribute set scan run yet.";
 }
 
 function exportValueCsv() {
-  const rows = [["ModelName","ModelId","ObjectRuntimeId","ObjectIdentity","ProblemAttributes","ActualValues","Messages"], ...valueData.csvRows];
-  if (rows.length <= 1) return setStatus("No value report rows to export.");
+  if (!valueData.csvRows.length) return setStatus("No value report rows to export.");
+  const rows = [["ModelName","ModelId","ObjectRuntimeId","ObjectIdentity","Set","AttributePath","Status","ActualValue","Expected","Message"], ...valueData.csvRows];
   downloadFile("attribute-value-report.csv", toCsv(rows), "text/csv");
 }
+
 function exportSetCsv() {
-  const rows = [["ModelName","ModelId","ObjectRuntimeId","ObjectIdentity","Issue","Details","DetectedSets","Notes"], ...setData.csvRows];
-  if (rows.length <= 1) return setStatus("No set report rows to export.");
+  if (!setData.csvRows.length) return setStatus("No set report rows to export.");
+  const rows = [["ModelName","ModelId","ObjectRuntimeId","ObjectIdentity","FindingType","Value","DetectedSets"], ...setData.csvRows];
   downloadFile("attribute-set-report.csv", toCsv(rows), "text/csv");
 }
-function toCsv(rows) {
-  return rows.map(row => row.map(cell => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
-}
-function downloadFile(filename, content, mime) {
-  const blob = new Blob([content], { type:mime });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-function chunkArray(array, size) {
-  const chunks = [];
-  for (let i=0; i<array.length; i += size) chunks.push(array.slice(i, i + size));
-  return chunks;
-}
-function errorMessage(error) { return error && error.message ? error.message : String(error); }
 
-async function debugSelectedObject() {
-  try {
-    const selection = await API.viewer.getSelection();
-    console.log("Selection:", selection);
-    setStatus("Debug selected object complete. Open the browser console for details.");
-  } catch(error) {
-    setStatus("Debug failed. " + errorMessage(error));
+function toCsv(rows) {
+  return rows.map(row => row.map(csvEscape).join(",")).join("\n");
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function describeExpected(rule) {
+  const checkType = rule.checkType || "text";
+  if (checkType === "text") return "Any non-empty text";
+  if (checkType === "number") return "Any number";
+  if (checkType === "list") return "One of: " + (rule.acceptedValues || []).join(", ");
+  if (checkType === "numberList") return "One of: " + (rule.acceptedValues || []).join(", ");
+  if (checkType === "numberRange") return "Between " + rule.min + " and " + rule.max;
+  if (checkType === "yesNo") return "Yes/No, True/False, or 1/0";
+  if (checkType === "date") return "Any date-like value";
+  return checkType;
+}
+
+function countGroupObjects(groups) {
+  return groups.reduce((sum, g) => sum + g.objectRuntimeIds.length, 0);
+}
+
+function modelName(modelId) {
+  return modelNameById.get(String(modelId)) || String(modelId);
+}
+
+function makePath(setName, attrName) {
+  const set = String(setName || "").trim();
+  const attr = String(attrName || "").trim();
+  return set ? set + "." + attr : attr;
+}
+
+function isBlank(value) {
+  return value === undefined || value === null || String(value).trim() === "";
+}
+
+function isFiniteNumber(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return false;
+  return Number.isFinite(Number(String(value).replace(",", ".")));
+}
+
+function lower(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function pause(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function ensureReady() {
+  if (!API) throw new Error("Not connected to Trimble Connect yet.");
+}
+
+function setStatus(message) {
+  const detailEl = document.getElementById("status");
+  if (detailEl) detailEl.textContent = message;
+
+  const visibleEl = document.getElementById("visibleStatus");
+  if (visibleEl) {
+    const text = String(message || "");
+    const firstLine = text.split("\n")[0] || "Ready.";
+    visibleEl.textContent = firstLine;
   }
 }
 
-loadThemePreference();
-init();
+function setProgress(percent) {
+  document.getElementById("progressBar").style.width = Math.max(0, Math.min(100, percent)) + "%";
+}
+
+function debug(title, data) {
+  const output = document.getElementById("debugOutput");
+  output.textContent += "\n\n===== " + title + " =====\n" + safeStringify(data);
+}
+
+function safeStringify(value) {
+  try { return JSON.stringify(value, null, 2); }
+  catch { return String(value); }
+}
+
+function errorMessage(error) {
+  if (!error) return "Unknown error";
+  if (error.message) return error.message;
+  return String(error);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeJs(value) {
+  return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
 </script>
 </body>
 </html>
