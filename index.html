@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v17</title>
+  <title>Attribute Checker v18</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -95,6 +95,14 @@
         <input id="ignoredPathKeywords" type="text" value="Ifc Project, Project, Ifc Site, Ifc Building, Ifc Building Storey" />
         <div class="hint">
           Separate values with commas. This is a fallback for hierarchy/container objects where Trimble shows groups such as Ifc Building Storey, but the API does not return Common Type clearly.
+        </div>
+
+        <div style="height:8px;"></div>
+
+        <label for="ignoredProductRootNames">Ignore exact Product/root names</label>
+        <input id="ignoredProductRootNames" type="text" value="Default Project" />
+        <div class="hint">
+          Separate values with commas. This targets root/container objects where Product Name is shown as Default Project in the Trimble property panel.
         </div>
       </div>
     </details>
@@ -334,6 +342,163 @@ function getIgnoredPathKeywords() {
     .split(",")
     .map(v => normalizeKeyword(v))
     .filter(Boolean);
+}
+
+function getIgnoredProductRootNames() {
+  const input = document.getElementById("ignoredProductRootNames");
+  if (!input) return [];
+  return input.value
+    .split(",")
+    .map(v => normalizeExactText(v))
+    .filter(Boolean);
+}
+
+function normalizeExactText(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function getProductRootNameMatch(flat, raw = null) {
+  const ignoredNames = getIgnoredProductRootNames();
+  if (!ignoredNames.length) return "";
+
+  const flatEntries = Object.entries(flat || {});
+
+  for (const [key, value] of flatEntries) {
+    const keyNorm = normalizeKeyword(key);
+    const valueNorm = normalizeExactText(value);
+
+    const looksLikeProductName =
+      keyNorm.includes("productproductname") ||
+      keyNorm.endsWith("productname") ||
+      keyNorm.includes("productname");
+
+    if (looksLikeProductName && ignoredNames.includes(valueNorm)) {
+      return "Product Name: " + String(value).trim();
+    }
+  }
+
+  const matches = [];
+
+  function primitive(value) {
+    return value !== undefined && value !== null && typeof value !== "object";
+  }
+
+  function normName(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/_/g, "")
+      .replace(/-/g, "")
+      .replace(/\./g, "")
+      .toLowerCase();
+  }
+
+  function walk(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+
+    if (typeof node !== "object") return;
+
+    const name =
+      node.name ?? node.Name ??
+      node.key ?? node.Key ??
+      node.displayName ?? node.DisplayName ??
+      node.label ?? node.Label ??
+      node.title ?? node.Title;
+
+    const value =
+      node.value ?? node.Value ??
+      node.val ?? node.Val ??
+      node.text ?? node.Text ??
+      node.displayValue ?? node.DisplayValue;
+
+    if (name && primitive(value)) {
+      const nameNorm = normName(name);
+      const valueNorm = normalizeExactText(value);
+      if ((nameNorm === "productname" || nameNorm.endsWith("productname")) && ignoredNames.includes(valueNorm)) {
+        matches.push("Product Name: " + String(value).trim());
+      }
+    }
+
+    const nestedNameValue = name && typeof name === "object"
+      ? (name.value ?? name.Value ?? name.text ?? name.Text ?? name.name ?? name.Name)
+      : null;
+
+    const nestedActualValue = value && typeof value === "object"
+      ? (value.value ?? value.Value ?? value.text ?? value.Text ?? value.name ?? value.Name)
+      : null;
+
+    if (nestedNameValue && primitive(nestedActualValue)) {
+      const nameNorm = normName(nestedNameValue);
+      const valueNorm = normalizeExactText(nestedActualValue);
+      if ((nameNorm === "productname" || nameNorm.endsWith("productname")) && ignoredNames.includes(valueNorm)) {
+        matches.push("Product Name: " + String(nestedActualValue).trim());
+      }
+    }
+
+    Object.keys(node).forEach(key => walk(node[key]));
+  }
+
+  walk(raw);
+  if (matches.length) return matches[0];
+
+  const rawNames = [];
+  const rawValues = [];
+
+  function collect(node) {
+    if (node === undefined || node === null) return;
+
+    if (Array.isArray(node)) {
+      node.forEach(collect);
+      return;
+    }
+
+    if (typeof node !== "object") {
+      if (primitive(node)) rawValues.push(String(node));
+      return;
+    }
+
+    const candidates = [
+      node.name, node.Name, node.key, node.Key, node.displayName, node.DisplayName,
+      node.label, node.Label, node.title, node.Title, node.type, node.Type
+    ];
+
+    for (const candidate of candidates) {
+      if (candidate === undefined || candidate === null) continue;
+      if (typeof candidate === "object") {
+        const nested = candidate.value ?? candidate.Value ?? candidate.text ?? candidate.Text ?? candidate.name ?? candidate.Name;
+        if (primitive(nested)) rawNames.push(String(nested));
+      } else {
+        rawNames.push(String(candidate));
+      }
+    }
+
+    const values = [node.value, node.Value, node.val, node.Val, node.text, node.Text, node.displayValue, node.DisplayValue];
+    for (const candidate of values) {
+      if (primitive(candidate)) rawValues.push(String(candidate));
+    }
+
+    Object.keys(node).forEach(key => collect(node[key]));
+  }
+
+  collect(raw);
+
+  const hasUnitsInContext = rawNames.some(name => normalizeKeyword(name).includes("unitsincontext")) ||
+    Object.keys(flat || {}).some(key => normalizeKeyword(key).includes("unitsincontext"));
+
+  const exactRootValue = rawValues.find(value => ignoredNames.includes(normalizeExactText(value)));
+  if (hasUnitsInContext && exactRootValue) {
+    return "Root value with Units In Context: " + exactRootValue;
+  }
+
+  return "";
 }
 
 function normalizeKeyword(value) {
@@ -590,6 +755,15 @@ function shouldIgnoreObject(flat, raw = null) {
       ignore: true,
       commonType,
       reason: "Common Type"
+    };
+  }
+
+  const productRootMatch = getProductRootNameMatch(flat, raw);
+  if (productRootMatch) {
+    return {
+      ignore: true,
+      commonType: commonType || "",
+      reason: "Product/root match: " + productRootMatch
     };
   }
 
@@ -1081,7 +1255,7 @@ function renderIgnoredList(items) {
           <thead><tr><th>Ignore reason</th><th>Ignored objects</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        <div class="hint">These objects were skipped before checking because they matched the ignored Common Type list or the ignored property group/path keyword list.</div>
+        <div class="hint">These objects were skipped before checking because they matched the ignored Common Type list, ignored property group/path keyword list, or ignored Product/root name list.</div>
       </div>
     </details>
   `;
@@ -1393,6 +1567,7 @@ async function debugSelectedCommonType() {
     const flatCommonType = getCommonType(flat);
     const rawCommonType = getCommonTypeFromRaw(raw);
     const keywordMatch = getPropertyPathKeywordMatch(flat, raw);
+    const productRootMatch = getProductRootNameMatch(flat, raw);
     const ignoreCheck = shouldIgnoreObject(flat, raw);
 
     debug("Selected object ignore filter debug", {
@@ -1401,10 +1576,12 @@ async function debugSelectedCommonType() {
       flatCommonType,
       rawCommonType,
       keywordMatch,
+      productRootMatch,
       finalCommonType: ignoreCheck.commonType,
       ignoreReason: ignoreCheck.reason,
       ignoredTypes: getIgnoredCommonTypes(),
       ignoredPathKeywords: getIgnoredPathKeywords(),
+      ignoredProductRootNames: getIgnoredProductRootNames(),
       willIgnore: ignoreCheck.ignore,
       flattenedKeysContainingCommonTypeIfcOrReference: Object.keys(flat).filter(k => {
         const kk = lower(k);
@@ -1424,6 +1601,7 @@ async function debugSelectedCommonType() {
       "Flat Common Type: " + (flatCommonType || "-") + "\n" +
       "Raw Common Type: " + (rawCommonType || "-") + "\n" +
       "Keyword match: " + (keywordMatch || "-") + "\n" +
+      "Product/root match: " + (productRootMatch || "-") + "\n" +
       "Will ignore: " + (ignoreCheck.ignore ? "YES" : "NO") + "\n" +
       "Reason: " + (ignoreCheck.reason || "-") + "\n\n" +
       "Open Debug output at the bottom if this still looks wrong."
