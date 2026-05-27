@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v24</title>
+  <title>Attribute Checker v25</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -102,6 +102,49 @@
       }
     }
 
+  
+    .button-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      margin:8px 0;
+    }
+    button.btn-primary { background:#2563eb; color:white; }
+    button.btn-secondary { background:#475569; color:white; }
+    button.btn-export { background:#059669; color:white; }
+    button.btn-visibility { background:#7c3aed; color:white; }
+    button.btn-admin { background:#64748b; color:white; }
+    button.btn-danger { background:#dc2626; color:white; }
+    .visible-status {
+      margin-top:10px;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#f8fafc;
+      color:#334155;
+      white-space:pre-wrap;
+      font-size:13px;
+    }
+    .admin-panel {
+      margin-top:10px;
+      border:1px dashed var(--border);
+      background:#ffffff;
+    }
+    .admin-panel > summary {
+      font-size:14px;
+      color:#1e293b;
+    }
+    .admin-tools-body {
+      padding:10px;
+      border-top:1px solid var(--border);
+    }
+    .admin-tools-body .status {
+      margin-top:10px;
+      max-height:220px;
+      overflow:auto;
+    }
+
   </style>
 </head>
 <body>
@@ -113,16 +156,26 @@
 <main>
   <div class="panel">
     <div class="buttons">
-      <button onclick="loadRules()">Update rules</button>
-      <button class="secondary" onclick="showAllObjects()">Show all objects again</button>
-      <button class="secondary" onclick="debugSelectedCommonType()">Debug selected Common Type</button>
-      <button class="danger" onclick="clearAllReports()">Clear reports</button>
+      <div class="button-row">
+        <button class="btn-secondary" onclick="showAllObjects()">Show all objects again</button>
+        <button class="btn-danger" onclick="clearAllReports()">Clear reports</button>
+      </div>
     </div>
     <div class="hint">
       Rules are loaded automatically from <b>rules.json</b> in the same GitHub Pages folder. Attribute set lists in the second tab come from that JSON file.
     </div>
 
-    <details class="ignore-settings" style="margin-top:10px;">
+    <div id="visibleStatus" class="visible-status">Starting extension...</div>
+
+    <details class="admin-panel">
+      <summary>Admin / setup tools</summary>
+      <div class="admin-tools-body">
+        <div class="button-row">
+          <button class="btn-admin" onclick="loadRules()">Reload rules manually</button>
+          <button class="btn-admin" onclick="debugSelectedCommonType()">Debug selected Common Type</button>
+        </div>
+
+        <details class="ignore-settings" style="margin-top:10px;">
       <summary>Advanced: ignored object types</summary>
       <div class="detail-body">
         <label for="ignoredCommonTypes">Ignore objects with these Common Type values</label>
@@ -149,7 +202,12 @@
       </div>
     </details>
 
-    <div id="status" class="status">Starting extension...</div>
+        <details class="ignore-settings" style="margin-top:10px;">
+          <summary>Admin / scan details</summary>
+          <div id="status" class="status">Starting extension...</div>
+        </details>
+      </div>
+    </details>
     <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
   </div>
 
@@ -162,8 +220,8 @@
     <div class="panel">
       <div class="buttons">
         <button onclick="runValueScan()">Run value scan</button>
-        <button class="secondary" onclick="showOnlyValueFailures()">Hide passed objects</button>
-        <button class="secondary" onclick="exportValueCsv()">Export value report CSV</button>
+        <button class="btn-visibility" onclick="showOnlyValueFailures()">Hide objects that pass value check</button>
+        <button class="btn-export" onclick="exportValueCsv()">Export value report CSV</button>
       </div>
       <div class="hint">
         This checks only the rule sets that are actually detected on each object. Objects without any known rule set are listed separately and are not treated as failed.
@@ -200,11 +258,11 @@
     <div class="panel">
       <h3 style="margin-top:0;">Choose required attribute sets</h3>
       <div class="buttons">
-        <button class="secondary" onclick="selectAllRequiredSets()">Select all</button>
+        <button class="btn-secondary" onclick="selectAllRequiredSets()">Select all</button>
         <button class="secondary" onclick="clearRequiredSets()">Select none</button>
-        <button onclick="runSetScan()">Run attribute set scan</button>
-        <button class="secondary" onclick="showOnlySetProblems()">Hide objects with required sets</button>
-        <button class="secondary" onclick="exportSetCsv()">Export set report CSV</button>
+        <button class="btn-primary" onclick="runSetScan()">Run attribute set scan</button>
+        <button class="btn-visibility" onclick="showOnlySetProblems()">Hide objects that pass set check</button>
+        <button class="btn-export" onclick="exportSetCsv()">Export set report CSV</button>
       </div>
       <div class="hint">
         Choose which sets are required for this scan. Selecting zero required sets is allowed and works as inventory mode: it only counts which sets exist on objects.
@@ -2016,7 +2074,15 @@ function ensureReady() {
 }
 
 function setStatus(message) {
-  document.getElementById("status").textContent = message;
+  const detailEl = document.getElementById("status");
+  if (detailEl) detailEl.textContent = message;
+
+  const visibleEl = document.getElementById("visibleStatus");
+  if (visibleEl) {
+    const text = String(message || "");
+    const firstLine = text.split("\n")[0] || "Ready.";
+    visibleEl.textContent = firstLine;
+  }
 }
 
 function setProgress(percent) {
