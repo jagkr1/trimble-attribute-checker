@@ -22,9 +22,155 @@
           "note": ""
         },
         {
+          "name": "Objekttype",
+          "path": "0_Element.Objekttype",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
           "name": "Utarbeidet av",
           "path": "0_Element.Utarbeidet av",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kontrollert av",
+          "path": "0_Element.Kontrollert av",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Godkjent av",
+          "path": "0_Element.Godkjent av",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Teksturer",
+          "path": "0_Element.Teksturer",
           "checkType": "text",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Revisjon",
+          "path": "0_Element.Revisjon",
+          "checkType": "text",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Revisjonsdato",
+          "path": "0_Element.Revisjonsdato",
+          "checkType": "text",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Revisjon gjelder",
+          "path": "0_Element.Revisjon gjelder",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tag",
+          "path": "0_Element.Tag",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Faseplan",
+          "path": "0_Element.Faseplan",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stikningsdata",
+          "path": "0_Element.Stikningsdata",
+          "checkType": "yesNo",
+          "required": true,
+          "acceptedValues": [
+            "Ja",
+            "Nei"
+          ],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Bruksstatus",
+          "path": "0_Element.Bruksstatus",
+          "checkType": "yesNo",
+          "required": true,
+          "acceptedValues": [
+            "Ja",
+            "Nei"
+          ],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kommentarer",
+          "path": "0_Element.Kommentarer",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dokumentlink",
+          "path": "0_Element.Dokumentlink",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Eier",
+          "path": "0_Element.Eier",
+          "checkType": "anyValue",
           "required": true,
           "acceptedValues": [],
           "min": "",
@@ -49,15 +195,1917 @@
           "note": ""
         },
         {
+          "name": "PNS",
+          "path": "0_Generell.PNS",
+          "checkType": "list",
+          "required": true,
+          "acceptedValues": [
+            "PNS1",
+            "PNS2",
+            "PNS3",
+            "PNS4",
+            "PNS6",
+            "PNS99"
+          ],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
           "name": "Fagdisiplin",
           "path": "0_Generell.Fagdisiplin",
           "checkType": "list",
           "required": true,
           "acceptedValues": [
             "veg",
+            "ele",
+            "ymi",
+            "voa",
+            "sko",
+            "get",
             "kon",
-            "ele"
+            "lan",
+            "hyg"
           ],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_GET_Betongdrager",
+      "attributes": [
+        {
+          "name": "Beskrivelse",
+          "path": "1_GET_Betongdrager.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjon H,B,L (mm)",
+          "path": "1_GET_Betongdrager.Dimensjon H,B,L (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Betongkvalitet",
+          "path": "1_GET_Betongdrager.Betongkvalitet",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Lengdearmering i hvert hjørne",
+          "path": "1_GET_Betongdrager.Lengdearmering i hvert hjørne",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Skjærarmering i hvert hjørne",
+          "path": "1_GET_Betongdrager.Skjærarmering i hvert hjørne",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Skråbolt materialkvalitet",
+          "path": "1_GET_Betongdrager.Skråbolt materialkvalitet",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Skråbolt senteravstand",
+          "path": "1_GET_Betongdrager.Skråbolt senteravstand",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Skråbolt innboringslengde berg",
+          "path": "1_GET_Betongdrager.Skråbolt innboringslengde berg",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_GET_Fordyblingsbolter",
+      "attributes": [
+        {
+          "name": "Beskrivelse",
+          "path": "1_GET_Fordyblingsbolter.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjon H,B,L (mm)",
+          "path": "1_GET_Fordyblingsbolter.Dimensjon H,B,L (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stålkvalitet",
+          "path": "1_GET_Fordyblingsbolter.Stålkvalitet",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Utførelse",
+          "path": "1_GET_Fordyblingsbolter.Utførelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_GET_KS",
+      "attributes": [
+        {
+          "name": "Beskrivelse",
+          "path": "1_GET_KS.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Type KS",
+          "path": "1_GET_KS.Type KS",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Diameter",
+          "path": "1_GET_KS.Diameter",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Innblandingsmengde",
+          "path": "1_GET_KS.Innblandingsmengde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Utførelse",
+          "path": "1_GET_KS.Utførelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_GET_Puter",
+      "attributes": [
+        {
+          "name": "Beskrivelse",
+          "path": "1_GET_Puter.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stagrad",
+          "path": "1_GET_Puter.Stagrad",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjon H,B,L (mm)",
+          "path": "1_GET_Puter.Dimensjon H,B,L (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stålkvalitet",
+          "path": "1_GET_Puter.Stålkvalitet",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Utførelse",
+          "path": "1_GET_Puter.Utførelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_GET_Spunt",
+      "attributes": [
+        {
+          "name": "Beskrivelse",
+          "path": "1_GET_Spunt.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjon H,B,L (mm)",
+          "path": "1_GET_Spunt.Dimensjon H,B,L (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stålkvalitet",
+          "path": "1_GET_Spunt.Stålkvalitet",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Frostisolering",
+          "path": "1_GET_Spunt.Frostisolering",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Fordybling i berg",
+          "path": "1_GET_Spunt.Fordybling i berg",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Avstivning",
+          "path": "1_GET_Spunt.Avstivning",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Betongdrager",
+          "path": "1_GET_Spunt.Betongdrager",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Utførelse",
+          "path": "1_GET_Spunt.Utførelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_GET_Stag",
+      "attributes": [
+        {
+          "name": "Beskrivelse",
+          "path": "1_GET_Stag.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stagrad",
+          "path": "1_GET_Stag.Stagrad",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Antal lisser",
+          "path": "1_GET_Stag.Antal lisser",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kapasitet pr. lisse",
+          "path": "1_GET_Stag.Kapasitet pr. lisse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Innboring i berg",
+          "path": "1_GET_Stag.Innboring i berg",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Helning mot horisontal",
+          "path": "1_GET_Stag.Helning mot horisontal",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Prøvelast",
+          "path": "1_GET_Stag.Prøvelast",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Forspenningslast",
+          "path": "1_GET_Stag.Forspenningslast",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Oppspenningsprosedyre",
+          "path": "1_GET_Stag.Oppspenningsprosedyre",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Beskrivelse oppspenning",
+          "path": "1_GET_Stag.Beskrivelse oppspenning",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Utførelse",
+          "path": "1_GET_Stag.Utførelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_HYG_Grunnvannsflate",
+      "attributes": [
+        {
+          "name": "Datagrunnlag",
+          "path": "1_HYG_Grunnvannsflate.Datagrunnlag",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_SKO_Fundament",
+      "attributes": [
+        {
+          "name": "Materiale",
+          "path": "1_SKO_Fundament.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Bredde mm",
+          "path": "1_SKO_Fundament.Bredde mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Høyde mm",
+          "path": "1_SKO_Fundament.Høyde mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Lengde mm",
+          "path": "1_SKO_Fundament.Lengde mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Beskrivelse",
+          "path": "1_SKO_Fundament.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Type fundament",
+          "path": "1_SKO_Fundament.Type fundament",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "x-koordinat",
+          "path": "1_SKO_Fundament.x-koordinat",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "y-koordinat",
+          "path": "1_SKO_Fundament.y-koordinat",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "z-koordinat",
+          "path": "1_SKO_Fundament.z-koordinat",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_SKO_Mast",
+      "attributes": [
+        {
+          "name": "Masttype",
+          "path": "1_SKO_Mast.Masttype",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Materiale",
+          "path": "1_SKO_Mast.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tverrsnitt mm",
+          "path": "1_SKO_Mast.Tverrsnitt mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Lengde m",
+          "path": "1_SKO_Mast.Lengde m",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Beskrivelse",
+          "path": "1_SKO_Mast.Beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_SKO_Oppmerking",
+      "attributes": [
+        {
+          "name": "Materiale",
+          "path": "1_SKO_Oppmerking.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjon H,B,L (mm)",
+          "path": "1_SKO_Oppmerking.Dimensjon H,B,L (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Navn",
+          "path": "1_SKO_Oppmerking.Navn",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Linjekode",
+          "path": "1_SKO_Oppmerking.Linjekode",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Utleggingsmetode",
+          "path": "1_SKO_Oppmerking.Utleggingsmetode",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Posisjonsnummer",
+          "path": "1_SKO_Oppmerking.Posisjonsnummer",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Oppmerkingsfarge",
+          "path": "1_SKO_Oppmerking.Oppmerkingsfarge",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Fresetype",
+          "path": "1_SKO_Oppmerking.Fresetype",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Profilering",
+          "path": "1_SKO_Oppmerking.Profilering",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_SKO_Plate",
+      "attributes": [
+        {
+          "name": "Bredde mm",
+          "path": "1_SKO_Plate.Bredde mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Høyde mm",
+          "path": "1_SKO_Plate.Høyde mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Areal m2",
+          "path": "1_SKO_Plate.Areal m2",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Type skilt",
+          "path": "1_SKO_Plate.Type skilt",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Folieklasse",
+          "path": "1_SKO_Plate.Folieklasse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Skiltnavn",
+          "path": "1_SKO_Plate.Skiltnavn",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Skiltnummer",
+          "path": "1_SKO_Plate.Skiltnummer",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Posisjonsnummer",
+          "path": "1_SKO_Plate.Posisjonsnummer",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Teksthøyde mm",
+          "path": "1_SKO_Plate.Teksthøyde mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Størrelse",
+          "path": "1_SKO_Plate.Størrelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Materiale",
+          "path": "1_SKO_Plate.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_SKO_Vegbommer",
+      "attributes": [
+        {
+          "name": "Bomfundament",
+          "path": "1_SKO_Vegbommer.Bomfundament",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Bommodell",
+          "path": "1_SKO_Vegbommer.Bommodell",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Lengde bomarm",
+          "path": "1_SKO_Vegbommer.Lengde bomarm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Leverandør",
+          "path": "1_SKO_Vegbommer.Leverandør",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tag/ID",
+          "path": "1_SKO_Vegbommer.Tag/ID",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Type bom",
+          "path": "1_SKO_Vegbommer.Type bom",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_VEG",
+      "attributes": [
+        {
+          "name": "Vegmodell",
+          "path": "1_VEG.Vegmodell",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tykkelse_m",
+          "path": "1_VEG.Tykkelse_m",
+          "checkType": "number",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjonerende_kjøremåte",
+          "path": "1_VEG.Dimensjonerende_kjøremåte",
+          "checkType": "list",
+          "required": true,
+          "acceptedValues": [
+            "A",
+            "B",
+            "C"
+          ],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Trafikkgruppe",
+          "path": "1_VEG.Trafikkgruppe",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Fartsgrense",
+          "path": "1_VEG.Fartsgrense",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjonerende_kjøretøy",
+          "path": "1_VEG.Dimensjonerende_kjøretøy",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjoneringsklasse",
+          "path": "1_VEG.Dimensjoneringsklasse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "ÅDT_(2045)",
+          "path": "1_VEG.ÅDT_(2045)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Andel_tunge_kjøretøy_(%)",
+          "path": "1_VEG.Andel_tunge_kjøretøy_(%)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Material",
+          "path": "1_VEG.Material",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjonerende_hastighet",
+          "path": "1_VEG.Dimensjonerende_hastighet",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "ÅDT_(2030)",
+          "path": "1_VEG.ÅDT_(2030)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tegninger",
+          "path": "1_VEG.Tegninger",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "URL_Sikt",
+          "path": "1_VEG.URL_Sikt",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "URL_Lengdeprofil",
+          "path": "1_VEG.URL_Lengdeprofil",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_VEG_Kantstein",
+      "attributes": [
+        {
+          "name": "Radius",
+          "path": "1_VEG_Kantstein.Radius",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjon H,B,L (mm)",
+          "path": "1_VEG_Kantstein.Dimensjon H,B,L (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Fas mm",
+          "path": "1_VEG_Kantstein.Fas mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Vishøyde normert mm",
+          "path": "1_VEG_Kantstein.Vishøyde normert mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Vishøyde avkjørsel mm",
+          "path": "1_VEG_Kantstein.Vishøyde avkjørsel mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Vishøyde gangkrysning mm",
+          "path": "1_VEG_Kantstein.Vishøyde gangkrysning mm",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Lengde overgangskantstein m",
+          "path": "1_VEG_Kantstein.Lengde overgangskantstein m",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Materiale",
+          "path": "1_VEG_Kantstein.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Farge",
+          "path": "1_VEG_Kantstein.Farge",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tegning",
+          "path": "1_VEG_Kantstein.Tegning",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Overflate",
+          "path": "1_VEG_Kantstein.Overflate",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_VEG_Rekkverk",
+      "attributes": [
+        {
+          "name": "Link",
+          "path": "1_VEG_Rekkverk.Link",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Materiale",
+          "path": "1_VEG_Rekkverk.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Rekkverkstype",
+          "path": "1_VEG_Rekkverk.Rekkverkstype",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Høyde",
+          "path": "1_VEG_Rekkverk.Høyde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Styrkeklasse",
+          "path": "1_VEG_Rekkverk.Styrkeklasse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Inntrengningsbredde",
+          "path": "1_VEG_Rekkverk.Inntrengningsbredde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Bredde",
+          "path": "1_VEG_Rekkverk.Bredde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Arbeidsbredde",
+          "path": "1_VEG_Rekkverk.Arbeidsbredde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stolpetype",
+          "path": "1_VEG_Rekkverk.Stolpetype",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stolpelengde",
+          "path": "1_VEG_Rekkverk.Stolpelengde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stolpeavstand",
+          "path": "1_VEG_Rekkverk.Stolpeavstand",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "En- eller tosidig",
+          "path": "1_VEG_Rekkverk.En- eller tosidig",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Skinnetype",
+          "path": "1_VEG_Rekkverk.Skinnetype",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Leverandør",
+          "path": "1_VEG_Rekkverk.Leverandør",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Radius",
+          "path": "1_VEG_Rekkverk.Radius",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_VOA",
+      "attributes": [
+        {
+          "name": "Avvinkling",
+          "path": "1_VOA.Avvinkling",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dimensjon (mm)",
+          "path": "1_VOA.Dimensjon (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Ledningsfall",
+          "path": "1_VOA.Ledningsfall",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Godstykkelse (mm)",
+          "path": "1_VOA.Godstykkelse (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Høyde innvendig kum (mm)",
+          "path": "1_VOA.Høyde innvendig kum (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kote innvendig bend",
+          "path": "1_VOA.Kote innvendig bend",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kote innvendig kumbunn",
+          "path": "1_VOA.Kote innvendig kumbunn",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kote topp justeringsring",
+          "path": "1_VOA.Kote topp justeringsring",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kumlokk type",
+          "path": "1_VOA.Kumlokk type",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kumnavn",
+          "path": "1_VOA.Kumnavn",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Ledning fra kum",
+          "path": "1_VOA.Ledning fra kum",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Ledning til kum",
+          "path": "1_VOA.Ledning til kum",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Lengde (m)",
+          "path": "1_VOA.Lengde (m)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Materiale",
+          "path": "1_VOA.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Trykkklasse",
+          "path": "1_VOA.Trykkklasse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Stige",
+          "path": "1_VOA.Stige",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Sumpdybde (mm)",
+          "path": "1_VOA.Sumpdybde (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "System",
+          "path": "1_VOA.System",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kumdel",
+          "path": "1_VOA.Kumdel",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Høyde kumdel (mm)",
+          "path": "1_VOA.Høyde kumdel (mm)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Pakning kum",
+          "path": "1_VOA.Pakning kum",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Dykker",
+          "path": "1_VOA.Dykker",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Isolasjon",
+          "path": "1_VOA.Isolasjon",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Hyperlink",
+          "path": "1_VOA.Hyperlink",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_ELE",
+      "attributes": [
+        {
+          "name": "Anvsning",
+          "path": "1_ELE.Anvsning",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Trekkekum Skrå topp",
+          "path": "1_ELE.Trekkekum Skrå topp",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Trekkekum Material/Type lokk",
+          "path": "1_ELE.Trekkekum Material/Type lokk",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Trekkekum Belastningsklasse",
+          "path": "1_ELE.Trekkekum Belastningsklasse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Trekkekum  type",
+          "path": "1_ELE.Trekkekum  type",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Fra",
+          "path": "1_ELE.Fra",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Til",
+          "path": "1_ELE.Til",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Føringsvei Lengde",
+          "path": "1_ELE.Føringsvei Lengde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Farge",
+          "path": "1_ELE.Farge",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Omfyllingsmasser",
+          "path": "1_ELE.Omfyllingsmasser",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Kabelmarkering",
+          "path": "1_ELE.Kabelmarkering",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Føringsvei Bruksområde",
+          "path": "1_ELE.Føringsvei Bruksområde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "1_YMI",
+      "attributes": [
+        {
+          "name": "Gravedybde (m)",
+          "path": "1_YMI.Gravedybde (m)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tiltak",
+          "path": "1_YMI.Tiltak",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Punkt ID",
+          "path": "1_YMI.Punkt ID",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Tilstandsklasse",
+          "path": "1_YMI.Tilstandsklasse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Lagtype",
+          "path": "1_YMI.Lagtype",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "name": "3_Beskrivelse",
+      "attributes": [
+        {
+          "name": "Prosesskode",
+          "path": "3_Beskrivelse.Prosesskode",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Prosessnavn",
+          "path": "3_Beskrivelse.Prosessnavn",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Mengde",
+          "path": "3_Beskrivelse.Mengde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Mengdeverdi",
+          "path": "3_Beskrivelse.Mengdeverdi",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Enhet",
+          "path": "3_Beskrivelse.Enhet",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Materiale",
+          "path": "3_Beskrivelse.Materiale",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Spesiell_beskrivelse",
+          "path": "3_Beskrivelse.Spesiell_beskrivelse",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "URL_Beskrivelse (Generell)",
+          "path": "3_Beskrivelse.URL_Beskrivelse (Generell)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "URL_Beskrivelse (Spesiell)",
+          "path": "3_Beskrivelse.URL_Beskrivelse (Spesiell)",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Mengdevariabel",
+          "path": "3_Beskrivelse.Mengdevariabel",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Sted",
+          "path": "3_Beskrivelse.Sted",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Element",
+          "path": "3_Beskrivelse.Element",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Delmengde",
+          "path": "3_Beskrivelse.Delmengde",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
+          "min": "",
+          "max": "",
+          "note": ""
+        },
+        {
+          "name": "Postnotat",
+          "path": "3_Beskrivelse.Postnotat",
+          "checkType": "anyValue",
+          "required": true,
+          "acceptedValues": [],
           "min": "",
           "max": "",
           "note": ""
