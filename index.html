@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v28</title>
+  <title>Attribute Checker v29</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -242,6 +242,45 @@
       z-index:1;
     }
 
+  
+    /* v29 scroll fix: make the extension panel itself scroll reliably */
+    html, body {
+      height:100%;
+    }
+    body {
+      overflow:hidden;
+    }
+    main {
+      height:calc(100vh - 58px);
+      overflow-y:auto !important;
+      overflow-x:hidden;
+      padding-bottom:40px;
+      -webkit-overflow-scrolling:touch;
+    }
+
+    /* v29 scroll fix: make long tables scroll inside their boxes */
+    .scroll-table {
+      display:block;
+      width:100%;
+      max-height:380px;
+      overflow-y:auto !important;
+      overflow-x:auto !important;
+      border:1px solid var(--border);
+      border-radius:8px;
+      margin-top:8px;
+      box-sizing:border-box;
+      -webkit-overflow-scrolling:touch;
+    }
+    .scroll-table table {
+      margin:0;
+      min-width:760px;
+    }
+    .scroll-table th {
+      position:sticky;
+      top:0;
+      z-index:2;
+    }
+
   </style>
 </head>
 <body class="theme-dark">
@@ -371,7 +410,7 @@
         <button class="btn-secondary" onclick="selectAllRequiredSets()">Select all</button>
         <button class="secondary" onclick="clearRequiredSets()">Select none</button>
         <button class="btn-primary" onclick="runSetScan()">Run attribute set scan</button>
-        <button class="btn-visibility" onclick="showOnlySetProblems()">Hide objects that pass set check</button>
+        <button class="btn-visibility" onclick="showOnlySetProblems()">Hide passed + ignored objects</button>
         <button class="btn-export" onclick="exportSetCsv()">Export set report CSV</button>
       </div>
       <div class="hint">
@@ -1560,7 +1599,7 @@ function renderSetReport(requiredSets, partialRules = []) {
   // Pass/fail rule requested:
   // PASS = 0 missing required and 0 no known set.
   // "Only required sets" is warning/information only.
-  // Ignored objects do not affect pass/fail.
+  // Ignored objects do not affect pass/fail. The visibility button now hides ignored objects together with passed objects.
   const failedModels = models.filter(model => model.missingObjects.length > 0 || model.noKnownObjects.length > 0);
   const passedModels = models.filter(model => model.missingObjects.length === 0 && model.noKnownObjects.length === 0);
 
@@ -1736,19 +1775,21 @@ function renderObjectList(title, items, badgeColor) {
     <details class="object">
       <summary>${escapeHtml(title)} <span class="badge ${badgeColor}">${items.length}</span></summary>
       <div class="detail-body">
-        <table>
-          <thead><tr><th>Object</th><th>Detected sets</th><th>Action</th></tr></thead>
-          <tbody>
-            ${items.slice(0,500).map(item => `
-              <tr>
-                <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
-                <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
-                <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-        ${items.length > 500 ? `<div class="hint">Showing first 500 objects. Use CSV export for the full list.</div>` : ""}
+        <div class="${items.length > 100 ? "scroll-table" : ""}">
+          <table>
+            <thead><tr><th>Object</th><th>Detected sets</th><th>Action</th></tr></thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td>${escapeHtml(item.identity.label)}<br><span class="small-text">${escapeHtml(item.identity.description)}</span></td>
+                  <td>${escapeHtml(item.detectedSets.join(", ") || "-")}</td>
+                  <td><button class="secondary small" onclick="selectOneObject('${escapeJs(item.modelId)}', ${Number(item.objectRuntimeId)})">Select</button></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div class="hint">Showing all ${items.length} object(s). Use the scroll box if the list is long.</div>
       </div>
     </details>
   `;
@@ -2183,7 +2224,7 @@ async function hideItemsSafely(itemsToHide, label) {
 
   setProgress(100);
   setStatus(
-    "Done. Hidden passing objects for " + label + ".\n\n" +
+    "Done. Hidden objects for " + label + ".\n\n" +
     "If some non-problem container/root objects remain visible, that is intentional. It avoids hiding failed objects through their parent hierarchy."
   );
 }
@@ -2205,12 +2246,19 @@ async function showOnlyValueFailures() {
 async function showOnlySetProblems() {
   try {
     ensureReady();
-    if (!setData.missingItems.length) return setStatus("No objects missing required sets to show.");
-    if (!setData.allRequiredItems.length) return setStatus("No objects with all required sets found to hide. Run the set scan first.");
 
-    await hideItemsSafely(setData.allRequiredItems, "objects missing required sets");
+    const itemsToHide = [
+      ...setData.allRequiredItems,
+      ...setData.ignoredItems
+    ];
+
+    if (!itemsToHide.length) {
+      return setStatus("No passed or ignored objects found to hide. Run the attribute set scan first.");
+    }
+
+    await hideItemsSafely(itemsToHide, "objects that passed the set check and objects ignored by the filter");
   } catch (error) {
-    setStatus("Could not hide objects that passed the required-set check.\n\n" + errorMessage(error));
+    setStatus("Could not hide passed and ignored objects.\n\n" + errorMessage(error));
   }
 }
 
