@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attribute Checker v29</title>
+  <title>Attribute Checker v31</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
   <style>
@@ -312,6 +312,7 @@
         </div>
 
         <div class="theme-toggle-row">
+          <button class="btn-admin" onclick="showOnlyIgnoredObjects()">Show only ignored objects</button>
           <button class="btn-admin" onclick="toggleTheme()">Toggle dark/light theme</button>
           <span id="themeStatus" class="theme-pill">Theme: dark</span>
         </div>
@@ -1459,7 +1460,7 @@ async function runSetScan() {
             }
           });
 
-          const missingSets = [
+          let missingSets = [
             ...missingExactSets.map(s => "Exact: " + s),
             ...missingPartialSets.map(s => "Partial: " + s),
             ...emptyPartialSets.map(s => "Partial empty: " + s)
@@ -1492,6 +1493,8 @@ async function runSetScan() {
               continue;
             }
           }
+
+          missingSets = uniqueList(missingSets);
 
           if (hasAnyRequiredRule && missingSets.length > 0) {
             missingRequired++;
@@ -1599,7 +1602,7 @@ function renderSetReport(requiredSets, partialRules = []) {
   // Pass/fail rule requested:
   // PASS = 0 missing required and 0 no known set.
   // "Only required sets" is warning/information only.
-  // Ignored objects do not affect pass/fail. The visibility button now hides ignored objects together with passed objects.
+  // Ignored objects do not affect pass/fail. The visibility button hides passed objects and ignored objects that are safe to hide. Root/container ignored objects are reported but not hidden directly because that can hide the whole model hierarchy.
   const failedModels = models.filter(model => model.missingObjects.length > 0 || model.noKnownObjects.length > 0);
   const passedModels = models.filter(model => model.missingObjects.length === 0 && model.noKnownObjects.length === 0);
 
@@ -2185,6 +2188,19 @@ async function setVisibilityForGroupsBatched(groups, visible, label) {
   }
 }
 
+function groupItemsByModel(items) {
+  const byModel = new Map();
+
+  (items || []).forEach(item => {
+    const modelId = String(item.modelId);
+    if (!byModel.has(modelId)) byModel.set(modelId, []);
+    byModel.get(modelId).push(Number(item.objectRuntimeId));
+  });
+
+  return byModel;
+}
+
+
 async function hideItemsSafely(itemsToHide, label) {
   if (!itemsToHide.length) {
     setStatus("No passing objects found to hide for: " + label);
@@ -2243,22 +2259,133 @@ async function showOnlyValueFailures() {
 }
 
 
-async function showOnlySetProblems() {
+async 
+function uniqueList(values) {
+  return Array.from(new Set((values || []).filter(v => String(v || "").trim())));
+}
+
+function isRootOrContainerIgnoredItem(item) {
+  const reason = String(item && item.reason ? item.reason : "").toLowerCase();
+  const commonType = String(item && item.commonType ? item.commonType : "").toLowerCase();
+
+  const rootWords = [
+    "project",
+    "site",
+    "buildingstorey",
+    "building storey",
+    "building",
+    "default project",
+    "product/root",
+    "root value",
+    "units in context"
+  ];
+
+  return rootWords.some(word => reason.includes(word) || commonType.includes(word));
+}
+
+
+function splitIgnoredItemsByHierarchyRisk(items) {
+  const safe = [];
+  const risky = [];
+
+  (items || []).forEach(item => {
+    if (isRootOrContainerIgnoredItem(item)) risky.push(item);
+    else safe.push(item);
+  });
+
+  return { safe, risky };
+}
+
+function showOnlySetProblems() {
   try {
     ensureReady();
 
+    const split = splitIgnoredItemsByHierarchyRisk(setData.ignoredItems);
     const itemsToHide = [
       ...setData.allRequiredItems,
-      ...setData.ignoredItems
+      ...split.safe
     ];
 
     if (!itemsToHide.length) {
-      return setStatus("No passed or ignored objects found to hide. Run the attribute set scan first.");
+      return setStatus("No passed or safely hideable ignored objects found to hide. Run the attribute set scan first.");
     }
 
-    await hideItemsSafely(itemsToHide, "objects that passed the set check and objects ignored by the filter");
+    const skippedNote = split.risky.length
+      ? "\n\nSkipped " + split.risky.length + " ignored root/container object(s), because hiding them directly can hide the whole model hierarchy."
+      : "";
+
+    setStatus(
+      "Hiding passed objects and ignored objects that are safe to hide..." + skippedNote
+    );
+
+    hideItemsSafely(itemsToHide, "objects that passed the set check and ignored objects that are safe to hide");
   } catch (error) {
     setStatus("Could not hide passed and ignored objects.\n\n" + errorMessage(error));
+  }
+}
+
+
+async function showOnlyIgnoredObjects() {
+  try {
+    ensureReady();
+
+    if (!setData.ignoredItems.length) {
+      return setStatus("No ignored objects found. Run the attribute set scan first.");
+    }
+
+    const split = splitIgnoredItemsByHierarchyRisk(setData.ignoredItems);
+
+    if (!split.safe.length) {
+      return setStatus(
+        "Ignored objects found, but all of them look like root/container objects.\n\n" +
+        "They are listed in the report, but isolating them by visibility is unsafe because hiding/showing around root containers can affect the whole model hierarchy."
+      );
+    }
+
+    const allLoadedGroups = setData.allGroups || [];
+    if (!allLoadedGroups.length) {
+      return setStatus("No loaded object groups stored. Run the attribute set scan first.");
+    }
+
+    if (!confirm(
+      "This will hide all loaded objects, then show ignored objects that are safe to isolate.\n\n" +
+      "Root/container ignored objects will not be isolated because they can affect the whole model hierarchy.\n\n" +
+      "Safe ignored objects to show: " + split.safe.length + "\\n" +
+      "Root/container ignored objects skipped: " + split.risky.length + "\\n\\n" +
+      "Continue?"
+    )) return;
+
+    setStatus("Hiding all objects...");
+    for (const group of allLoadedGroups) {
+      await API.viewer.setObjectState(
+        { modelObjectIds: [{ modelId: group.modelId, objectRuntimeIds: group.objectRuntimeIds }] },
+        { visible: false }
+      );
+      await pause(20);
+    }
+
+    setStatus("Showing safe ignored objects...");
+    const byModel = groupItemsByModel(split.safe);
+
+    for (const [modelId, ids] of byModel.entries()) {
+      for (let i = 0; i < ids.length; i += 200) {
+        const batch = ids.slice(i, i + 200);
+        await API.viewer.setObjectState(
+          { modelObjectIds: [{ modelId, objectRuntimeIds: batch }] },
+          { visible: true }
+        );
+        await pause(20);
+      }
+    }
+
+    setStatus(
+      "Showing only safe ignored objects.\n" +
+      "Safe ignored objects shown: " + split.safe.length + "\n" +
+      "Root/container ignored objects skipped: " + split.risky.length + "\n\n" +
+      "Use 'Show all objects again' to restore the model."
+    );
+  } catch (error) {
+    setStatus("Could not show only ignored objects.\n\n" + errorMessage(error));
   }
 }
 
